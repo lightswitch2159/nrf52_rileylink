@@ -3271,13 +3271,13 @@
 // <e> NRFX_SPIM_ENABLED - nrfx_spim - SPIM peripheral driver
 //==========================================================
 #ifndef NRFX_SPIM_ENABLED
-#define NRFX_SPIM_ENABLED 0
+#define NRFX_SPIM_ENABLED 1
 #endif
 // <q> NRFX_SPIM0_ENABLED  - Enable SPIM0 instance
 
 
 #ifndef NRFX_SPIM0_ENABLED
-#define NRFX_SPIM0_ENABLED 0
+#define NRFX_SPIM0_ENABLED 1
 #endif
 
 // <q> NRFX_SPIM1_ENABLED  - Enable SPIM1 instance
@@ -5342,42 +5342,42 @@
 
 // <e> SPI_ENABLED - nrf_drv_spi - SPI/SPIM peripheral driver - legacy layer
 //==========================================================
-#ifndef SPI_ENABLED
-#define SPI_ENABLED 0
-#endif
-// <o> SPI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
-
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest)
-// <1=> 1
-// <2=> 2
-// <3=> 3
-// <4=> 4
-// <5=> 5
-// <6=> 6
-// <7=> 7
-
-#ifndef SPI_DEFAULT_CONFIG_IRQ_PRIORITY
-#define SPI_DEFAULT_CONFIG_IRQ_PRIORITY 6
-#endif
-
-// <o> NRF_SPI_DRV_MISO_PULLUP_CFG  - MISO PIN pull-up configuration.
-
-// <0=> NRF_GPIO_PIN_NOPULL
-// <1=> NRF_GPIO_PIN_PULLDOWN
-// <3=> NRF_GPIO_PIN_PULLUP
-
-#ifndef NRF_SPI_DRV_MISO_PULLUP_CFG
-#define NRF_SPI_DRV_MISO_PULLUP_CFG 1
-#endif
-
-// <e> SPI0_ENABLED - Enable SPI0 instance
-//==========================================================
-#ifndef SPI0_ENABLED
-#define SPI0_ENABLED 0
-#endif
-// <q> SPI0_USE_EASY_DMA  - Use EasyDMA
+// #ifndef SPI_ENABLED
+// #define SPI_ENABLED 0
+// #endif
+// // <o> SPI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+//
+//
+// // <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
+// // <0=> 0 (highest)
+// // <1=> 1
+// // <2=> 2
+// // <3=> 3
+// // <4=> 4
+// // <5=> 5
+// // <6=> 6
+// // <7=> 7
+//
+// #ifndef SPI_DEFAULT_CONFIG_IRQ_PRIORITY
+// #define SPI_DEFAULT_CONFIG_IRQ_PRIORITY 6
+// #endif
+//
+// // <o> NRF_SPI_DRV_MISO_PULLUP_CFG  - MISO PIN pull-up configuration.
+//
+// // <0=> NRF_GPIO_PIN_NOPULL
+// // <1=> NRF_GPIO_PIN_PULLDOWN
+// // <3=> NRF_GPIO_PIN_PULLUP
+//
+// #ifndef NRF_SPI_DRV_MISO_PULLUP_CFG
+// #define NRF_SPI_DRV_MISO_PULLUP_CFG 1
+// #endif
+//
+// // <e> SPI0_ENABLED - Enable SPI0 instance
+// //==========================================================
+// #ifndef SPI0_ENABLED
+// #define SPI0_ENABLED 0
+// #endif
+// // <q> SPI0_USE_EASY_DMA  - Use EasyDMA
 
 
 #ifndef SPI0_USE_EASY_DMA
