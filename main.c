@@ -68,7 +68,7 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-#include "spi.h"
+#include "subg_rfspy_spi.h"
 
 
 #define ADVERTISING_LED                 BSP_BOARD_LED_0                         /**< Is on when device is advertising. */
@@ -579,11 +579,11 @@ int main(void)
     buttons_init();
     power_management_init();
 
-    spi_init();
+    subg_rfspy_spi_init();
 
     nrf_delay_ms(2000);
 
-    runCommand(1);
+    run_command(1);
 
     ble_stack_init();
     gap_params_init();
@@ -603,7 +603,7 @@ int main(void)
         NRF_LOG_INFO("blinking");
         NRF_LOG_FLUSH();
         __WFE();
-        runCommand(1);
+        run_command(2);
     }
     idle_state_handle();
 }
