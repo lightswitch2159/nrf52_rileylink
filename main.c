@@ -63,108 +63,12 @@
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
 #include "nrf_pwr_mgmt.h"
-#include "nrfx_spim.h"
 #include "nrf_delay.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-
-
-
-
-#define NRFX_SPIM_SCK_PIN  3
-#define NRFX_SPIM_MOSI_PIN 4
-#define NRFX_SPIM_MISO_PIN 28
-#define NRFX_SPIM_SS_PIN   29
-//#define NRFX_SPIM_DCX_PIN  30
-
-#define SPI_INSTANCE 0                                          /**< SPI instance index. */
-static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(SPI_INSTANCE);  /**< SPI instance. */
-
-static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instance completed the transfer. */
-
-#define SPI_BUFFER_LEN 255
-static uint8_t       m_tx_buf[SPI_BUFFER_LEN];           /**< TX buffer. */
-static uint8_t       m_rx_buf[SPI_BUFFER_LEN];  /**< RX buffer. */
-
-void spim_event_handler(nrfx_spim_evt_t const * p_event,
-                       void *                  p_context)
-{
-    spi_xfer_done = true;
-    NRF_LOG_INFO("Transfer completed.");
-    // if (m_rx_buf[0] != 0)
-    // {
-        NRF_LOG_INFO(" Received:");
-        NRF_LOG_HEXDUMP_INFO(m_rx_buf, strlen((const char *)m_rx_buf));
-    // }
-}
-
-void runCommand(uint8_t command)
-{
-  nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(m_tx_buf, 0, m_rx_buf, 0);
-
-  // Send length
-  spi_xfer_done = false;
-  memset(m_rx_buf, 0, SPI_BUFFER_LEN);
-  m_tx_buf[0] = 0x99;   // marker
-  m_tx_buf[1] = 1;      // length of command
-  xfer_desc.tx_length = 2;
-  xfer_desc.rx_length = 2;
-  APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
-  while (!spi_xfer_done)
-  {
-      __WFE();
-  }
-
-  // Send command
-  spi_xfer_done = false;
-  memset(m_rx_buf, 0, SPI_BUFFER_LEN);
-  m_tx_buf[0] = command;
-  xfer_desc.tx_length = 1;
-  xfer_desc.rx_length = 1;
-  APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
-  while (!spi_xfer_done)
-  {
-      __WFE();
-  }
-
-  while(1)
-  {
-    // Wait for response
-    spi_xfer_done = false;
-    memset(m_rx_buf, 0, SPI_BUFFER_LEN);
-    m_tx_buf[0] = 0x99;   // marker
-    m_tx_buf[1] = 0;      // no data to send/waiting
-    xfer_desc.tx_length = 2;
-    xfer_desc.rx_length = 2;
-    APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
-
-    while (!spi_xfer_done)
-    {
-        __WFE();
-    }
-
-    if (m_rx_buf[1] > 0) {
-      break;
-    }
-  }
-
-  // Read response
-  spi_xfer_done = false;
-  memset(m_rx_buf, 0, SPI_BUFFER_LEN);
-  xfer_desc.tx_length = m_rx_buf[1];
-  xfer_desc.rx_length = m_rx_buf[1];
-  APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
-  while (!spi_xfer_done)
-  {
-      __WFE();
-  }
-
-}
-
-
-
+#include "spi.h"
 
 
 #define ADVERTISING_LED                 BSP_BOARD_LED_0                         /**< Is on when device is advertising. */
@@ -194,6 +98,12 @@ void runCommand(uint8_t command)
 
 #define DEAD_BEEF                       0xDEADBEEF                              /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
+
+void app_error_handler(ret_code_t error_code, uint32_t line_num, const uint8_t * p_file_name)
+{
+  NRF_LOG_INFO("error: %d, %d, %s", error_code, line_num, p_file_name);
+  NRF_LOG_FLUSH();
+}
 
 BLE_LBS_DEF(m_lbs);                                                             /**< LED Button Service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                       /**< GATT module instance. */
@@ -668,6 +578,13 @@ int main(void)
     timers_init();
     buttons_init();
     power_management_init();
+
+    spi_init();
+
+    nrf_delay_ms(2000);
+
+    runCommand(1);
+
     ble_stack_init();
     gap_params_init();
     gatt_init();
@@ -675,38 +592,20 @@ int main(void)
     advertising_init();
     conn_params_init();
 
-    nrfx_spim_config_t spi_config = NRFX_SPIM_DEFAULT_CONFIG;
-    spi_config.frequency      = NRF_SPIM_FREQ_125K;
-    spi_config.ss_pin         = NRFX_SPIM_SS_PIN;
-    spi_config.miso_pin       = NRFX_SPIM_MISO_PIN;
-    spi_config.mosi_pin       = NRFX_SPIM_MOSI_PIN;
-    spi_config.sck_pin        = NRFX_SPIM_SCK_PIN;
-    spi_config.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
-    spi_config.mode           = NRF_SPIM_MODE_0;  // SCK active high, sample on leading edge of clock
-    spi_config.ss_active_high = false;
-    APP_ERROR_CHECK(nrfx_spim_init(&spi, &spi_config, spim_event_handler, NULL));
 
-    // Start execution.
-    NRF_LOG_INFO("RileyLink 2.0 started.");
     advertising_start();
-
-    while (1)
-    {
-
-      runCommand(1);
-
-      NRF_LOG_FLUSH();
-
-      bsp_board_led_invert(BSP_BOARD_LED_0);
-      nrf_delay_ms(200);
-    }
-
 
     // Enter main loop.
     for (;;)
     {
-        idle_state_handle();
+        bsp_board_led_invert(BSP_BOARD_LED_0);
+        nrf_delay_ms(500);
+        NRF_LOG_INFO("blinking");
+        NRF_LOG_FLUSH();
+        __WFE();
+        runCommand(1);
     }
+    idle_state_handle();
 }
 
 
