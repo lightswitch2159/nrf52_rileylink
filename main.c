@@ -59,7 +59,6 @@
 #include "boards.h"
 #include "app_timer.h"
 #include "app_button.h"
-#include "ble_lbs.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
 #include "nrf_pwr_mgmt.h"
@@ -69,6 +68,7 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 #include "subg_rfspy_spi.h"
+#include "rileylink_service.h"
 
 
 #define ADVERTISING_LED                 BSP_BOARD_LED_0                         /**< Is on when device is advertising. */
@@ -105,7 +105,12 @@ void app_error_handler(ret_code_t error_code, uint32_t line_num, const uint8_t *
   NRF_LOG_FLUSH();
 }
 
-BLE_LBS_DEF(m_lbs);                                                             /**< LED Button Service instance. */
+void app_error_fault_handler	(	uint32_t id, uint32_t pc, uint32_t info)
+{
+  NRF_LOG_INFO("error: %d, %d, %d", id, pc, info);
+  NRF_LOG_FLUSH();
+}
+
 NRF_BLE_GATT_DEF(m_gatt);                                                       /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                                                         /**< Context for the Queued Write module.*/
 
@@ -220,7 +225,9 @@ static void advertising_init(void)
     ble_advdata_t advdata;
     ble_advdata_t srdata;
 
-    ble_uuid_t adv_uuids[] = {{LBS_UUID_SERVICE, m_lbs.uuid_type}};
+    ble_uuid_t adv_uuids[] = {
+      {RILEYLINK_UUID_SERVICE, rileylink_service_uuid_type}
+    };
 
     // Build and set advertising data.
     memset(&advdata, 0, sizeof(advdata));
@@ -270,32 +277,11 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
 }
 
 
-/**@brief Function for handling write events to the LED characteristic.
- *
- * @param[in] p_lbs     Instance of LED Button Service to which the write applies.
- * @param[in] led_state Written/desired state of the LED.
- */
-static void led_write_handler(uint16_t conn_handle, ble_lbs_t * p_lbs, uint8_t led_state)
-{
-    if (led_state)
-    {
-        bsp_board_led_on(LEDBUTTON_LED);
-        NRF_LOG_INFO("Received LED ON!");
-    }
-    else
-    {
-        bsp_board_led_off(LEDBUTTON_LED);
-        NRF_LOG_INFO("Received LED OFF!");
-    }
-}
-
-
 /**@brief Function for initializing services that will be used by the application.
  */
 static void services_init(void)
 {
     ret_code_t         err_code;
-    ble_lbs_init_t     init     = {0};
     nrf_ble_qwr_init_t qwr_init = {0};
 
     // Initialize Queued Write Module.
@@ -304,11 +290,8 @@ static void services_init(void)
     err_code = nrf_ble_qwr_init(&m_qwr, &qwr_init);
     APP_ERROR_CHECK(err_code);
 
-    // Initialize LBS.
-    init.led_write_handler = led_write_handler;
-
-    err_code = ble_lbs_init(&m_lbs, &init);
-    APP_ERROR_CHECK(err_code);
+    // Initialize RileyLink service.
+    rileylink_service_init();
 }
 
 
@@ -374,6 +357,7 @@ static void advertising_start(void)
 {
     ret_code_t           err_code;
 
+    NRF_LOG_INFO("advertising_start");
     err_code = sd_ble_gap_adv_start(m_adv_handle, APP_BLE_CONN_CFG_TAG);
     APP_ERROR_CHECK(err_code);
 
@@ -389,6 +373,7 @@ static void advertising_start(void)
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 {
     ret_code_t err_code;
+    NRF_LOG_INFO("ble_evt_handler %d", p_ble_evt->header.evt_id);
 
     switch (p_ble_evt->header.evt_id)
     {
@@ -488,53 +473,6 @@ static void ble_stack_init(void)
 }
 
 
-/**@brief Function for handling events from the button handler module.
- *
- * @param[in] pin_no        The pin that the event applies to.
- * @param[in] button_action The button action (press/release).
- */
-static void button_event_handler(uint8_t pin_no, uint8_t button_action)
-{
-    ret_code_t err_code;
-
-    switch (pin_no)
-    {
-        case LEDBUTTON_BUTTON:
-            NRF_LOG_INFO("Send button state change.");
-            err_code = ble_lbs_on_button_change(m_conn_handle, &m_lbs, button_action);
-            if (err_code != NRF_SUCCESS &&
-                err_code != BLE_ERROR_INVALID_CONN_HANDLE &&
-                err_code != NRF_ERROR_INVALID_STATE &&
-                err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING)
-            {
-                APP_ERROR_CHECK(err_code);
-            }
-            break;
-
-        default:
-            APP_ERROR_HANDLER(pin_no);
-            break;
-    }
-}
-
-
-/**@brief Function for initializing the button handler module.
- */
-static void buttons_init(void)
-{
-    ret_code_t err_code;
-
-    //The array must be static because a pointer to it will be saved in the button handler module.
-    static app_button_cfg_t buttons[] =
-    {
-        {LEDBUTTON_BUTTON, false, BUTTON_PULL, button_event_handler}
-    };
-
-    err_code = app_button_init(buttons, ARRAY_SIZE(buttons),
-                               BUTTON_DETECTION_DELAY);
-    APP_ERROR_CHECK(err_code);
-}
-
 
 static void log_init(void)
 {
@@ -572,39 +510,47 @@ static void idle_state_handle(void)
  */
 int main(void)
 {
+  int test = 1;
     // Initialize.
     log_init();
     leds_init();
     timers_init();
-    buttons_init();
     power_management_init();
 
     subg_rfspy_spi_init();
 
-    nrf_delay_ms(2000);
-
-    run_command(1);
-
+    NRF_LOG_INFO("ble_stack_init.");
     ble_stack_init();
+    NRF_LOG_INFO("gap_params_init.");
     gap_params_init();
+    NRF_LOG_INFO("gatt_init.");
     gatt_init();
+    NRF_LOG_INFO("services_init.");
     services_init();
+    NRF_LOG_INFO("advertising_init.");
     advertising_init();
+    NRF_LOG_INFO("conn_params_init. %d", test++);
     conn_params_init();
-
 
     advertising_start();
 
+    nrf_delay_ms(1000);
+
+    uint8_t cmd[] = {1};
+    run_command(cmd, 1);
+
+
+
     // Enter main loop.
-    for (;;)
-    {
-        bsp_board_led_invert(BSP_BOARD_LED_0);
-        nrf_delay_ms(500);
-        NRF_LOG_INFO("blinking");
-        NRF_LOG_FLUSH();
-        __WFE();
-        run_command(2);
-    }
+    // for (;;)
+    // {
+    //     bsp_board_led_invert(BSP_BOARD_LED_0);
+    //     nrf_delay_ms(500);
+    //     NRF_LOG_INFO("blinking");
+    //     NRF_LOG_FLUSH();
+    //     __WFE();
+    //     run_command(2);
+    // }
     idle_state_handle();
 }
 

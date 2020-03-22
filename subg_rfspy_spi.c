@@ -8,10 +8,10 @@
 
 #include "subg_rfspy_spi.h"
 
-#define NRFX_SPIM_SCK_PIN  3
-#define NRFX_SPIM_MOSI_PIN 4
-#define NRFX_SPIM_MISO_PIN 28
-#define NRFX_SPIM_SS_PIN   29
+#define NRFX_SPIM_SCK_PIN  4
+#define NRFX_SPIM_MOSI_PIN 28
+#define NRFX_SPIM_MISO_PIN 29
+#define NRFX_SPIM_SS_PIN   3
 //#define NRFX_SPIM_DCX_PIN  30
 
 #define SPI_INSTANCE 0                                            /**< SPI instance index. */
@@ -22,15 +22,15 @@ static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instanc
 uint8_t subg_rfspy_tx_buf[SUBG_RFSPY_SPI_BUFFER_LEN];  /**< TX buffer. */
 uint8_t subg_rfspy_rx_buf[SUBG_RFSPY_SPI_BUFFER_LEN];  /**< RX buffer. */
 uint8_t subg_rfspy_tx_len;
+uint8_t subg_rfspy_rx_len;
 
 static uint8_t size_tx_buf[2];  /**< Size exchange TX buffer. */
 static uint8_t size_rx_buf[2];  /**< Size exchange RX buffer. */
 
-static enum State{Idle,Size,Tx,Wait,Rx} state;
+static enum State{Size,Xfer,Idle} state;
 
 static void size_exchange();
-static void send_data();
-static void receive_data();
+static void xfer_data();
 
 void do_spi();
 
@@ -39,7 +39,7 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
 {
     if (p_event->type == NRFX_SPIM_EVENT_DONE) {
       if (p_event->xfer_desc.tx_length > 0) {
-        NRF_LOG_INFO(" Tx: %d", p_event->xfer_desc.tx_length);
+        NRF_LOG_INFO(" Tax: %d", p_event->xfer_desc.tx_length);
         NRF_LOG_HEXDUMP_INFO(p_event->xfer_desc.p_tx_buffer, p_event->xfer_desc.tx_length);
       }
       if (p_event->xfer_desc.rx_length > 0) {
@@ -47,36 +47,39 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
         NRF_LOG_HEXDUMP_INFO(p_event->xfer_desc.p_rx_buffer, p_event->xfer_desc.rx_length);
       }
       // NRF_LOG_INFO("-----------------");
-      NRF_LOG_FLUSH();
     } else {
       NRF_LOG_INFO("Unknown spi event type %d", p_event->type);
-      NRF_LOG_FLUSH();
     }
 
     switch (state) {
     case Size:
-      state = Tx;
-      send_data();
-      break;
-    case Tx:
-      state = Wait;
-      size_exchange();
-      break;
-    case Wait:
-      if (size_rx_buf[1] > 0) {
-        state = Rx;
-        receive_data();
+      if (subg_rfspy_tx_len > 0 || size_rx_buf[1] > 0) {
+        if (size_rx_buf[1] > 0) {
+          subg_rfspy_rx_len = p_event->xfer_desc.rx_length;
+        }
+        NRF_LOG_INFO("Size->xfer");
+        state = Xfer;
+        xfer_data();
       } else {
+        NRF_LOG_INFO("Size");
         size_exchange();
       }
       break;
-    case Rx:
-      state = Idle;
-      NRF_LOG_INFO("Xfer finished");
+    case Xfer:
+      if (subg_rfspy_rx_len == 0) {
+        NRF_LOG_INFO("Xfer->Size");
+        state = Size;
+        size_exchange();
+      } else {
+        NRF_LOG_INFO("Xfer->Idle");
+        state = Idle;
+        NRF_LOG_INFO("Xfer finished");
+      }
       break;
     default:
       NRF_LOG_INFO("finished spi event during idle???");
     }
+    NRF_LOG_FLUSH();
 }
 
 void subg_rfspy_spi_init() {
@@ -97,22 +100,23 @@ void subg_rfspy_spi_init() {
   state = Idle;
 }
 
-void run_command(uint8_t command)
+void run_command(uint8_t *data, uint8_t data_len)
 {
   if (state != Idle) {
     NRF_LOG_INFO("Skipped command: busy");
     return;
   }
   state = Size;
-  subg_rfspy_tx_buf[0] = command;
-  subg_rfspy_tx_len = 1;
-
+  subg_rfspy_tx_len = data_len;
+  subg_rfspy_rx_len = 0;
+  memcpy(subg_rfspy_tx_buf, data, data_len);
   size_exchange();
 }
 
+nrfx_spim_xfer_desc_t size_xfer_desc = NRFX_SPIM_XFER_TRX(size_tx_buf, 0, size_rx_buf, 0);
+
 void size_exchange() {
   // Send length
-  nrfx_spim_xfer_desc_t size_xfer_desc = NRFX_SPIM_XFER_TRX(size_tx_buf, 0, size_rx_buf, 0);
   spi_xfer_done = false;
   size_tx_buf[0] = 0x99;                   // marker
   size_tx_buf[1] = subg_rfspy_tx_len;      // length of command
@@ -121,19 +125,12 @@ void size_exchange() {
   APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &size_xfer_desc, 0));
 }
 
-void send_data() {
-  nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(subg_rfspy_tx_buf, 0, subg_rfspy_rx_buf, 0);
+nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(subg_rfspy_tx_buf, 0, subg_rfspy_rx_buf, 0);
+
+void xfer_data() {
   spi_xfer_done = false;
   xfer_desc.tx_length = size_tx_buf[1];
   xfer_desc.rx_length = size_rx_buf[1];
   subg_rfspy_tx_len = 0;
-  APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
-}
-
-void receive_data() {
-  nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(subg_rfspy_tx_buf, 0, subg_rfspy_rx_buf, 0);
-  spi_xfer_done = false;
-  xfer_desc.tx_length = size_tx_buf[1];
-  xfer_desc.rx_length = size_rx_buf[1];
   APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
 }
