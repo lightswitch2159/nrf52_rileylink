@@ -76,7 +76,7 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
         NRF_LOG_INFO("Xfer finished");
       }
       break;
-    default:
+    case Idle:
       NRF_LOG_INFO("finished spi event during idle???");
     }
     NRF_LOG_FLUSH();
