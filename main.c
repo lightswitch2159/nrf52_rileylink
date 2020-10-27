@@ -117,17 +117,17 @@ static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        
 
 static uint8_t m_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;                   /**< Advertising handle used to identify an advertising set. */
 
-void app_error_handler(ret_code_t error_code, uint32_t line_num, const uint8_t * p_file_name)
-{
-  NRF_LOG_INFO("error: %d, %d, %s", error_code, line_num, p_file_name);
-  NRF_LOG_FLUSH();
-}
+//void app_error_handler(ret_code_t error_code, uint32_t line_num, const uint8_t * p_file_name)
+//{
+//  NRF_LOG_INFO("error: %d, %d, %s", error_code, line_num, p_file_name);
+//  NRF_LOG_FLUSH();
+//}
 
-void app_error_fault_handler	(	uint32_t id, uint32_t pc, uint32_t info)
-{
-  NRF_LOG_INFO("error: %d, %d, %d", id, pc, info);
-  NRF_LOG_FLUSH();
-}
+//void app_error_fault_handler	(	uint32_t id, uint32_t pc, uint32_t info)
+//{
+//  NRF_LOG_INFO("error: %d, %d, %d", id, pc, info);
+//  NRF_LOG_FLUSH();
+//}
 
 /**@brief Function for assert macro callback.
  *
@@ -563,46 +563,47 @@ static void idle_state_handle(void)
 int main(void)
 {
   int test = 1;
-    // Initialize.
-    log_init();
+
+   log_init();
     leds_init();
     timers_init();
+    //buttons_init();
     power_management_init();
-
-    subg_rfspy_spi_init();
-
-    NRF_LOG_INFO("ble_stack_init.");
     ble_stack_init();
-    NRF_LOG_INFO("gap_params_init.");
     gap_params_init();
-    NRF_LOG_INFO("gatt_init.");
     gatt_init();
-    NRF_LOG_INFO("services_init.");
     services_init();
-    NRF_LOG_INFO("advertising_init.");
     advertising_init();
-    NRF_LOG_INFO("conn_params_init. %d", test++);
     conn_params_init();
 
+    // Start execution.
+    NRF_LOG_INFO("Blinky example started.");
     advertising_start();
 
-    nrf_delay_ms(1000);
-
-    uint8_t cmd[] = {2};
-    run_command(cmd, 1);
-
-
     // Enter main loop.
-    // for (;;)
-    // {
-    //     bsp_board_led_invert(BSP_BOARD_LED_0);
-    //     nrf_delay_ms(500);
-    //     NRF_LOG_INFO("blinking");
-    //     NRF_LOG_FLUSH();
-    //     __WFE();
-    //     run_command(2);
-    // }
-    idle_state_handle();
+    for (;;)
+    {
+        idle_state_handle();
+    }
+
+
+    //nrf_delay_ms(1000);
+
+    //uint8_t cmd[] = {2};
+    //run_command(cmd, 1);
+
+
+    //// Enter main loop.
+    //// for (;;)
+    //// {
+    ////     bsp_board_led_invert(BSP_BOARD_LED_0);
+    ////     nrf_delay_ms(500);
+    ////     NRF_LOG_INFO("blinking");
+    ////     NRF_LOG_FLUSH();
+    ////     __WFE();
+    ////     run_command(2);
+    //// }
+    //idle_state_handle();
 }
 
 
