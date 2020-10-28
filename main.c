@@ -117,17 +117,17 @@ static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        
 
 static uint8_t m_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;                   /**< Advertising handle used to identify an advertising set. */
 
-//void app_error_handler(ret_code_t error_code, uint32_t line_num, const uint8_t * p_file_name)
-//{
-//  NRF_LOG_INFO("error: %d, %d, %s", error_code, line_num, p_file_name);
-//  NRF_LOG_FLUSH();
-//}
+void app_error_handler(ret_code_t error_code, uint32_t line_num, const uint8_t * p_file_name)
+{
+  NRF_LOG_INFO("error: %d, %d, %s", error_code, line_num, p_file_name);
+  NRF_LOG_FLUSH();
+}
 
-//void app_error_fault_handler	(	uint32_t id, uint32_t pc, uint32_t info)
-//{
-//  NRF_LOG_INFO("error: %d, %d, %d", id, pc, info);
-//  NRF_LOG_FLUSH();
-//}
+void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
+{
+  NRF_LOG_INFO("error: %d, %d, %d", id, pc, info);
+  NRF_LOG_FLUSH();
+}
 
 /**@brief Function for assert macro callback.
  *
@@ -219,15 +219,10 @@ static void sleep_mode_enter(void)
 
 /**@brief Function for starting advertising.
  */
-static void advertising_start(void)
+static void advertising_start()
 {
-    ret_code_t           err_code;
-
-    NRF_LOG_INFO("advertising_start");
-    err_code = sd_ble_gap_adv_start(m_adv_handle, APP_BLE_CONN_CFG_TAG);
+    ret_code_t err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
-
-    bsp_board_led_on(ADVERTISING_LED);
 }
 
 /**@brief Function for handling BLE events.
@@ -562,9 +557,11 @@ static void idle_state_handle(void)
  */
 int main(void)
 {
-  int test = 1;
+    int test = 1;
+    log_init();
 
-   log_init();
+    NRF_LOG_INFO("logging check.");
+
     leds_init();
     timers_init();
     //buttons_init();
@@ -577,7 +574,8 @@ int main(void)
     conn_params_init();
 
     // Start execution.
-    NRF_LOG_INFO("Blinky example started.");
+    NRF_LOG_INFO("RileyLink 2.0 started.");
+    NRF_LOG_FLUSH();
     advertising_start();
 
     // Enter main loop.
