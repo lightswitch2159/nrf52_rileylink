@@ -138,6 +138,8 @@
       <file file_name="led_mode_handlers.h" />
       <file file_name="data_relay.c" />
       <file file_name="data_relay.h" />
+      <file file_name="subg_rfspy_spi.c" />
+      <file file_name="subg_rfspy_spi.h" />
     </folder>
   </project>
   <configuration

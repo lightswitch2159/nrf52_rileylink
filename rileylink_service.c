@@ -144,7 +144,7 @@ static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
     attr_md.vloc       = BLE_GATTS_VLOC_STACK;
     attr_md.rd_auth    = 0;
     attr_md.wr_auth    = 0;
-    attr_md.vlen       = 0;
+    attr_md.vlen       = 1;
 
     // Attribute Value settings
     attr_char_value.p_uuid       = &ble_uuid;
