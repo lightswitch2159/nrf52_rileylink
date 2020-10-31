@@ -30,6 +30,8 @@
 #include "nrf_log_default_backends.h"
 
 #include "rileylink_service.h"
+#include "data_relay.h"
+#include "led_mode_handlers.h"
 
 
 #define DEVICE_NAME                     "RileyLink2"                             /**< Name of device. Will be included in the advertising data. */
@@ -227,18 +229,6 @@ static void on_yys_evt(ble_yy_service_t     * p_yy_service,
 }
 */
 
-static void led_mode_write_handler(uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, uint8_t led_state)
-{
-    if (led_state)
-    {
-        NRF_LOG_INFO("Received LED ON!");
-    }
-    else
-    {
-        NRF_LOG_INFO("Received LED OFF!");
-    }
-}
-
 /**@brief Function for initializing services that will be used by the application.
  */
 static void services_init(void)
@@ -255,6 +245,7 @@ static void services_init(void)
 
     // 1. Initialize the RileyLink service
     rileylink_init.led_mode_write_handler = led_mode_write_handler;
+    rileylink_init.data_write_handler = data_relay_ble_write_handler;
 
     err_code = ble_rileylink_service_init(&m_rileylink_service, &rileylink_init);
     APP_ERROR_CHECK(err_code);

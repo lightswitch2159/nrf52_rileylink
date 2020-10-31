@@ -12,6 +12,7 @@
 #include "app_error.h"
 
 static const uint8_t LEDModeCharName[] = "LED Mode";
+static const uint8_t DATACharName[] = "DATA";
 
 /**@brief Function for handling the Connect event.
  *
@@ -49,6 +50,11 @@ static void on_write(ble_rileylink_service_t * p_rileylink_service, ble_evt_t co
     {
         p_rileylink_service->led_mode_write_handler(p_ble_evt->evt.gap_evt.conn_handle, p_rileylink_service, p_evt_write->data[0]);
     }
+    else if (   (p_evt_write->handle == p_rileylink_service->data_char_handles.value_handle)
+        && (p_rileylink_service->data_write_handler != NULL))
+    {
+        p_rileylink_service->data_write_handler(p_ble_evt->evt.gap_evt.conn_handle, p_rileylink_service, p_evt_write->data, p_evt_write->len);
+    }
 }
 
 /**@brief Function for adding the LED mode characteristic.
@@ -75,7 +81,7 @@ static uint32_t led_mode_char_add(ble_rileylink_service_t * p_rileylink_service)
     char_md.p_cccd_md                = NULL;
     char_md.p_sccd_md                = NULL;
 
-    // Define the LED 2 Characteristic UUID
+    // Define the LED Nide Characteristic UUID
     ble_uuid.type = p_rileylink_service->uuid_type;
     ble_uuid.uuid = BLE_UUID_RILEYLINK_LED_MODE_UUID;
 
@@ -102,6 +108,57 @@ static uint32_t led_mode_char_add(ble_rileylink_service_t * p_rileylink_service)
                                            &p_rileylink_service->led_mode_char_handles);
 }
 
+/**@brief Function for adding the DATA mode characteristic.
+ *
+ */
+static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
+{
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_t    attr_char_value;
+    ble_gatts_attr_md_t attr_md;
+    ble_uuid_t          ble_uuid;
+
+    memset(&char_md, 0, sizeof(char_md));
+    memset(&attr_md, 0, sizeof(attr_md));
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    char_md.char_props.read          = 1;
+    char_md.char_props.write         = 1;
+    char_md.p_char_user_desc         = DATACharName;
+    char_md.char_user_desc_size      = sizeof(DATACharName);
+    char_md.char_user_desc_max_size  = sizeof(DATACharName);
+    char_md.p_char_pf                = NULL;
+    char_md.p_user_desc_md           = NULL;
+    char_md.p_cccd_md                = NULL;
+    char_md.p_sccd_md                = NULL;
+
+    // Define the DATA Characteristic UUID
+    ble_uuid.type = p_rileylink_service->uuid_type;
+    ble_uuid.uuid = BLE_UUID_RILEYLINK_DATA_UUID;
+
+    // Set permissions on the Characteristic value
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+
+    // Attribute Metadata settings
+    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth    = 0;
+    attr_md.wr_auth    = 0;
+    attr_md.vlen       = 0;
+
+    // Attribute Value settings
+    attr_char_value.p_uuid       = &ble_uuid;
+    attr_char_value.p_attr_md    = &attr_md;
+    attr_char_value.init_len     = 0;
+    attr_char_value.init_offs    = 0;
+    attr_char_value.max_len      = 220;
+    attr_char_value.p_value      = NULL;
+
+    return sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
+                                           &attr_char_value,
+                                           &p_rileylink_service->data_char_handles);
+}
+
 uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_service, const ble_rileylink_service_init_t * p_rileylink_service_init)
 {
     uint32_t   err_code;
@@ -112,6 +169,7 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
 
     // Initialize service structure.
     p_rileylink_service->led_mode_write_handler = p_rileylink_service_init->led_mode_write_handler;
+    p_rileylink_service->data_write_handler = p_rileylink_service_init->data_write_handler;
 
     // Add service UUID
     ble_uuid128_t base_uuid = {BLE_UUID_RILEYLINK_SERVICE_BASE_UUID};
@@ -139,6 +197,12 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
         return err_code;
     }
 
+    err_code = data_char_add(p_rileylink_service);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+    
     return NRF_SUCCESS;
 }
 

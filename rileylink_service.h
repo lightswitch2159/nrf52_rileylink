@@ -48,12 +48,14 @@ extern uint16_t rileylink_service_handle;
 typedef struct ble_rileylink_service_s ble_rileylink_service_t;
 
 typedef void (*ble_rileylink_service_led_mode_write_handler_t) (uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, uint8_t new_state);
+typedef void (*ble_rileylink_service_data_write_handler_t) (uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint16_t length);
 
 /** @brief LED Service init structure. This structure contains all options and data needed for
  *        initialization of the service.*/
 typedef struct
 {
     ble_rileylink_service_led_mode_write_handler_t led_mode_write_handler; /**< Event handler to be called when the LED Characteristic is written. */
+    ble_rileylink_service_data_write_handler_t data_write_handler; /**< Event handler to be called when the DATA Characteristic is written. */
 } ble_rileylink_service_init_t;
 
 /**@brief RileyLink Service structure.
@@ -66,7 +68,9 @@ typedef struct ble_rileylink_service_s
     uint16_t                            service_handle;
     uint8_t                             uuid_type;
     ble_gatts_char_handles_t            led_mode_char_handles;
+    ble_gatts_char_handles_t            data_char_handles;
     ble_rileylink_service_led_mode_write_handler_t led_mode_write_handler;
+    ble_rileylink_service_data_write_handler_t data_write_handler;
 
 } ble_rileylink_service_t;
 

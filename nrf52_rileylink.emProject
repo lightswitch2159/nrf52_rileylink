@@ -134,6 +134,10 @@
       <file file_name="main.c" />
       <file file_name="rileylink_service.c" />
       <file file_name="rileylink_service.h" />
+      <file file_name="led_mode_handlers.c" />
+      <file file_name="led_mode_handlers.h" />
+      <file file_name="data_relay.c" />
+      <file file_name="data_relay.h" />
     </folder>
   </project>
   <configuration
