@@ -111,7 +111,7 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
     p_rileylink_service->conn_handle = BLE_CONN_HANDLE_INVALID;
 
     // Initialize service structure.
-    p_rileylink_service->led_mode_write_handler = p_rileylink_service->led_mode_write_handler;
+    p_rileylink_service->led_mode_write_handler = p_rileylink_service_init->led_mode_write_handler;
 
     // Add service UUID
     ble_uuid128_t base_uuid = {BLE_UUID_RILEYLINK_SERVICE_BASE_UUID};
