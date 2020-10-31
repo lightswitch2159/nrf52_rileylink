@@ -1,6 +1,6 @@
 # setup notes
 
-initial dev using pca0040
+initial dev using pca10056
 nRF5_SDK_17.0.2_d674dde
 Segger Embedded Studio build
 
