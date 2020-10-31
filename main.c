@@ -681,6 +681,7 @@ int main(void)
     services_init();
     conn_params_init();
     peer_manager_init();
+    subg_rfspy_spi_init();
 
     // Start execution.
     NRF_LOG_INFO("RileyLink 2.0 started.");

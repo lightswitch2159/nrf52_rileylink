@@ -5,6 +5,7 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 #include "nrf_delay.h"
+#include "nrf_gpio.h"
 
 #include "subg_rfspy_spi.h"
 
@@ -39,7 +40,7 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
 {
     if (p_event->type == NRFX_SPIM_EVENT_DONE) {
       if (p_event->xfer_desc.tx_length > 0) {
-        NRF_LOG_INFO(" Tax: %d", p_event->xfer_desc.tx_length);
+        NRF_LOG_INFO(" Tx: %d", p_event->xfer_desc.tx_length);
         NRF_LOG_HEXDUMP_INFO(p_event->xfer_desc.p_tx_buffer, p_event->xfer_desc.tx_length);
       }
       if (p_event->xfer_desc.rx_length > 0) {
@@ -59,9 +60,11 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
         }
         NRF_LOG_INFO("Size->xfer");
         state = Xfer;
+        nrf_delay_ms(5);
         xfer_data();
       } else {
         NRF_LOG_INFO("Size");
+        nrf_delay_ms(10);
         size_exchange();
       }
       break;
@@ -69,11 +72,17 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
       if (subg_rfspy_rx_len == 0) {
         NRF_LOG_INFO("Xfer->Size");
         state = Size;
+        nrf_delay_ms(1);
+        nrf_gpio_pin_set(NRFX_SPIM_SS_PIN);
+        nrf_delay_ms(10);
+        nrf_gpio_pin_clear(NRFX_SPIM_SS_PIN);
+        nrf_delay_ms(1);
         size_exchange();
       } else {
         NRF_LOG_INFO("Xfer->Idle");
         state = Idle;
         NRF_LOG_INFO("Xfer finished");
+        nrf_gpio_pin_set(NRFX_SPIM_SS_PIN);
       }
       break;
     case Idle:
@@ -85,7 +94,7 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
 void subg_rfspy_spi_init() {
   nrfx_spim_config_t spi_config = NRFX_SPIM_DEFAULT_CONFIG;
   spi_config.frequency      = 0x00800000UL; // 0x02000000UL = NRF_SPIM_FREQ_125K;
-  spi_config.ss_pin         = NRFX_SPIM_SS_PIN;
+  spi_config.ss_pin         = NRFX_SPIM_PIN_NOT_USED;
   spi_config.miso_pin       = NRFX_SPIM_MISO_PIN;
   spi_config.mosi_pin       = NRFX_SPIM_MOSI_PIN;
   spi_config.sck_pin        = NRFX_SPIM_SCK_PIN;
@@ -93,6 +102,10 @@ void subg_rfspy_spi_init() {
   spi_config.mode           = NRF_SPIM_MODE_0;  // SCK active high, sample on leading edge of clock
   spi_config.ss_active_high = false;
   APP_ERROR_CHECK(nrfx_spim_init(&spi, &spi_config, spim_event_handler, NULL));
+
+  // Using SS manually
+  nrf_gpio_pin_set(NRFX_SPIM_SS_PIN);
+  nrf_gpio_cfg_output(NRFX_SPIM_SS_PIN);
 
   // Start execution.
   NRF_LOG_INFO("RileyLink 2.0 spi started.");
@@ -110,6 +123,8 @@ void run_command(uint8_t *data, uint8_t data_len)
   subg_rfspy_tx_len = data_len;
   subg_rfspy_rx_len = 0;
   memcpy(subg_rfspy_tx_buf, data, data_len);
+  nrf_gpio_pin_clear(NRFX_SPIM_SS_PIN);
+  nrf_delay_ms(1);
   size_exchange();
 }
 
