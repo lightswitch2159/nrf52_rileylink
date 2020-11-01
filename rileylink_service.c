@@ -222,7 +222,6 @@ static uint32_t version_char_add(ble_rileylink_service_t * p_rileylink_service)
     memset(&attr_char_value, 0, sizeof(attr_char_value));
 
     char_md.char_props.read          = 1;
-    char_md.char_props.notify        = 1;
     char_md.p_char_user_desc         = VersionCharName;
     char_md.char_user_desc_size      = sizeof(VersionCharName);
     char_md.char_user_desc_max_size  = sizeof(VersionCharName);
