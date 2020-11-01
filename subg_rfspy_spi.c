@@ -40,19 +40,21 @@ void do_spi();
 void spim_event_handler(nrfx_spim_evt_t const * p_event,
                        void *                  p_context)
 {
-    if (p_event->type == NRFX_SPIM_EVENT_DONE) {
-      if (p_event->xfer_desc.tx_length > 0) {
-        NRF_LOG_INFO(" Tx: %d", p_event->xfer_desc.tx_length);
-        NRF_LOG_HEXDUMP_INFO(p_event->xfer_desc.p_tx_buffer, p_event->xfer_desc.tx_length);
-      }
-      if (p_event->xfer_desc.rx_length > 0) {
-        NRF_LOG_INFO(" Rx: %d", p_event->xfer_desc.rx_length);
-        NRF_LOG_HEXDUMP_INFO(p_event->xfer_desc.p_rx_buffer, p_event->xfer_desc.rx_length);
-      }
-      // NRF_LOG_INFO("-----------------");
-    } else {
+    if (p_event->type != NRFX_SPIM_EVENT_DONE) {
       NRF_LOG_INFO("Unknown spi event type %d", p_event->type);
     }
+    //else
+    //{
+    //    if (p_event->xfer_desc.tx_length > 0) {
+    //        NRF_LOG_INFO(" Tx: %d", p_event->xfer_desc.tx_length);
+    //        NRF_LOG_HEXDUMP_INFO(p_event->xfer_desc.p_tx_buffer, p_event->xfer_desc.tx_length);
+    //    }
+    //    if (p_event->xfer_desc.rx_length > 0) {
+    //        NRF_LOG_INFO(" Rx: %d", p_event->xfer_desc.rx_length);
+    //        NRF_LOG_HEXDUMP_INFO(p_event->xfer_desc.p_rx_buffer, p_event->xfer_desc.rx_length);
+    //    }
+    //    NRF_LOG_INFO("-----------------");
+    //}
 
     switch (state) {
     case Size:
@@ -60,12 +62,12 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
         if (size_rx_buf[1] > 0) {
           subg_rfspy_rx_len = size_rx_buf[1];
         }
-        NRF_LOG_INFO("Size->xfer (rx=%d, tx=%d)", subg_rfspy_rx_len, subg_rfspy_tx_len);
+        //NRF_LOG_INFO("Size->xfer (rx=%d, tx=%d)", subg_rfspy_rx_len, subg_rfspy_tx_len);
         state = Xfer;
         nrf_delay_ms(5);
         xfer_data();
       } else {
-        NRF_LOG_INFO("Size");
+        //NRF_LOG_INFO("Size");
         nrf_delay_ms(10);
         size_exchange();
       }
@@ -83,7 +85,8 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
       } else {
         // data in subg_rfspy_rx_buf now
         if (m_response_handler != NULL) {
-            m_response_handler(subg_rfspy_rx_buf, subg_rfspy_rx_len);
+            NRF_LOG_INFO("Received response:");
+            NRF_LOG_HEXDUMP_INFO(subg_rfspy_rx_buf, subg_rfspy_rx_len);
         }
         NRF_LOG_INFO("Xfer->Idle");
         state = Idle;
@@ -127,6 +130,9 @@ void run_command(const uint8_t *data, uint8_t data_len)
     NRF_LOG_INFO("Skipped command: busy");
     return;
   }
+
+  NRF_LOG_INFO("Running command:");
+  NRF_LOG_HEXDUMP_INFO(data, data_len);
   state = Size;
   subg_rfspy_tx_len = data_len;
   subg_rfspy_rx_len = 0;

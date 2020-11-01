@@ -9,6 +9,7 @@
 #include "ble.h"
 #include "ble_err.h"
 #include "nrf_log.h"
+#include "nrf_ble_qwr.h"
 #include "app_error.h"
 
 static const uint8_t LEDModeCharName[] = "LED Mode";
@@ -56,7 +57,11 @@ static void on_write(ble_rileylink_service_t * p_rileylink_service, ble_evt_t co
     else if (   (p_evt_write->handle == p_rileylink_service->data_char_handles.value_handle)
         && (p_rileylink_service->data_write_handler != NULL))
     {
-        p_rileylink_service->data_write_handler(p_ble_evt->evt.gap_evt.conn_handle, p_rileylink_service, p_evt_write->data, p_evt_write->len);
+        p_rileylink_service->data_write_handler(p_evt_write->data, p_evt_write->len);
+    }
+    else 
+    {
+        NRF_LOG_DEBUG("Unhandled write");
     }
 }
 
@@ -146,12 +151,18 @@ static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
     // Attribute Value settings
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
-    attr_char_value.max_len      = 220;
+    attr_char_value.max_len      = BLE_RILEYLINK_DATA_MAX_LENGTH;
     attr_char_value.p_value      = NULL;
 
-    return sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
+    err_code = sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
                                            &attr_char_value,
                                            &p_rileylink_service->data_char_handles);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+    return NRF_SUCCESS;
 }
 
 /**@brief Function for adding the Response Count characteristic.
@@ -328,6 +339,7 @@ void ble_rileylink_service_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_cont
             break;
 
         case BLE_GATTS_EVT_WRITE:
+            NRF_LOG_DEBUG("GATTS Write");
             on_write(p_rileylink_service, p_ble_evt);
             break;
 
@@ -336,6 +348,7 @@ void ble_rileylink_service_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_cont
             break;
 
         default:
+            NRF_LOG_DEBUG("Unhandled BLE event: 0x%x.", p_ble_evt->header.evt_id);
             // No implementation needed.
             break;
     }
@@ -367,9 +380,11 @@ uint32_t ble_rileylink_service_send_data(ble_rileylink_service_t * p_rileylink_s
         hvx_params.type = BLE_GATT_HVX_NOTIFICATION;
 
         err_code = sd_ble_gatts_hvx(p_rileylink_service->conn_handle, &hvx_params);
-        if (err_code != NRF_SUCCESS) {
-            NRF_LOG_INFO("sd_ble_gatts_hvx error: 0x%x", err_code);
+        // NRF_ERROR_INVALID_STATE means client has not subscribed to this notification
+        if (err_code != NRF_SUCCESS && err_code != NRF_ERROR_INVALID_STATE) {
+            NRF_LOG_DEBUG("sd_ble_gatts_hvx error: 0x%x", err_code);
+            return err_code;
         }
     }
-    return err_code;
+    return NRF_SUCCESS;
 }

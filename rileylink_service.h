@@ -21,10 +21,7 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
                                                  0x97, 0x41, 0xc5, 0x99, 0x3b, 0x73, 0x35, 0x02}
 #define BLE_UUID_RILEYLINK_SERVICE_UUID        0x733b
 
-#define LOCAL_CHAR_UUID                 0x1234                                      /**< Proprietary UUID for local characteristic. */
-#define APP_CFG_CHAR_LEN                20                                          /**< Size of the characteristic value being notified (in bytes). */
-#define APP_REPORT_CHAR_LEN           8                                             /**< Size of the characteristic value being notified (in bytes). */
-#define APP_CTRLPT_CHAR_LEN           8                                             /**< Size of the control point characteristic value being notified (in bytes). */
+#define BLE_RILEYLINK_DATA_MAX_LENGTH 220
 
 extern uint8_t rileylink_service_uuid_type;
 extern uint16_t rileylink_service_handle;
@@ -65,7 +62,7 @@ extern uint16_t rileylink_service_handle;
 typedef struct ble_rileylink_service_s ble_rileylink_service_t;
 
 typedef void (*ble_rileylink_service_led_mode_write_handler_t) (uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, uint8_t new_state);
-typedef void (*ble_rileylink_service_data_write_handler_t) (uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint16_t length);
+typedef void (*ble_rileylink_service_data_write_handler_t) (const uint8_t *data, uint16_t length);
 
 /** @brief LED Service init structure. This structure contains all options and data needed for
  *        initialization of the service.*/

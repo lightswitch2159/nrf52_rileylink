@@ -2,9 +2,7 @@
 <session>
  <Bookmarks/>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
-  <BreakpointListItem trigger="" line="121" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="rileylink_service.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="132" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="rileylink_service.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="139" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="rileylink_service.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="379" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="rileylink_service.c" useHWbreakpoint="false"/>
   <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
@@ -32,8 +30,10 @@
   <ProjectSessionItem path="nrf52_rileylink;nrf52_rileylink"/>
   <ProjectSessionItem path="nrf52_rileylink;nrf52_rileylink;Application"/>
   <ProjectSessionItem path="nrf52_rileylink;nrf52_rileylink;Board Support"/>
+  <ProjectSessionItem path="nrf52_rileylink;nrf52_rileylink;nRF_BLE"/>
   <ProjectSessionItem path="nrf52_rileylink;nrf52_rileylink;nRF_Libraries"/>
   <ProjectSessionItem path="nrf52_rileylink;nrf52_rileylink;nRF_Segger_RTT"/>
+  <ProjectSessionItem path="nrf52_rileylink;nrf52_rileylink;nRF_SoftDevice"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="ble_app_template_pca10056_s140" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -58,7 +58,9 @@
   <Trace enabled="Yes"/>
  </TraceWindow>
  <Watch1>
-  <Watches active="1" update="Never"/>
+  <Watches active="1" update="Never">
+   <Watchpoint expression="attr_char_value" name="attr_char_value" radix="16" linenumber="0" filename=""/>
+  </Watches>
  </Watch1>
  <Watch2>
   <Watches active="0" update="Never"/>
@@ -70,13 +72,15 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="681" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="main.c" selected="1" top="662" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="86" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/modules/nrfx/drivers/include/nrfx_spim.h" selected="0" top="79" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="99" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/components/libraries/util/app_error_weak.c" selected="0" top="80" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="118" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="rileylink_service.c" selected="0" top="84" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="72" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/components/libraries/util/app_error.c" selected="0" top="54" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="22" y="10591" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="sdk_config.h" selected="0" top="10570" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="23" y="41" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="rileylink_service.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="24" y="133" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="rileylink_service.c" selected="1" top="115" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="115" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/components/ble/ble_advertising/ble_advertising.c" selected="0" top="91" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="25" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="main.c" selected="0" top="0" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="75" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/components/libraries/util/app_error_weak.c" selected="0" top="65" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="500" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/components/softdevice/s140/headers/ble_gatts.h" selected="0" top="476" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="55" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/components/libraries/util/app_error.c" selected="0" top="48" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="25" y="73" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="rileylink_service.h" selected="0" top="48" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="294" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/components/softdevice/common/nrf_sdh_ble.c" selected="0" top="264" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="397" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF5_SDK_current/components/ble/nrf_ble_qwr/nrf_ble_qwr.c" selected="0" top="371" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="ble_app_template_pca10056_s140" fileDialogDefaultFilter="*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx" autoConnectTarget="J-Link" buildConfiguration="Release" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="/Users/pete/dev/nrf52_rileylink2" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="nrf52_rileylink" fileDialogDefaultFilter="*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx" autoConnectTarget="J-Link" buildConfiguration="Release" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="/Users/pete/dev/nrf52_rileylink2" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>

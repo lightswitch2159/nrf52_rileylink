@@ -12,7 +12,7 @@ void data_relay_init(ble_rileylink_service_t * p_rileylink_service) {
     m_rileylink_service = p_rileylink_service;
 }
 
-void data_relay_ble_write_handler(uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint16_t length)
+void data_relay_ble_write_handler(const uint8_t *data, uint16_t length)
 {
     NRF_LOG_INFO("Data received via BLE: %d bytes.", length);
     if (length >= 2) {
