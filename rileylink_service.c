@@ -14,6 +14,8 @@
 static const uint8_t LEDModeCharName[] = "LED Mode";
 static const uint8_t DataCharName[] = "Data";
 static const uint8_t ResponseCountCharName[] = "Response Count";
+static const uint8_t VersionCharName[] = "Version";
+static uint8_t FirmwareVersion[] = "nrf52_rileylink 1.0";
 
 /**@brief Function for handling the Connect event.
  *
@@ -193,7 +195,59 @@ static uint32_t response_count_char_add(ble_rileylink_service_t * p_rileylink_se
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
 
     // Attribute Metadata settings
-    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
+    attr_md.vloc       = BLE_GATTS_VLOC_USER;
+    attr_md.rd_auth    = 0;
+    attr_md.wr_auth    = 0;
+    attr_md.vlen       = 0;
+
+    // Attribute Value settings
+    p_rileylink_service->response_count = 0;
+    attr_char_value.p_uuid       = &ble_uuid;
+    attr_char_value.p_attr_md    = &attr_md;
+    attr_char_value.init_len     = 1;
+    attr_char_value.init_offs    = 0;
+    attr_char_value.max_len      = 1;
+    attr_char_value.p_value      = &(p_rileylink_service->response_count);
+
+    return sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
+                                           &attr_char_value,
+                                           &p_rileylink_service->response_count_handles);
+}
+
+/**@brief Function for adding the Version characteristic.
+ *
+ */
+static uint32_t version_char_add(ble_rileylink_service_t * p_rileylink_service)
+{
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_t    attr_char_value;
+    ble_gatts_attr_md_t attr_md;
+    ble_uuid_t          ble_uuid;
+
+    memset(&char_md, 0, sizeof(char_md));
+    memset(&attr_md, 0, sizeof(attr_md));
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    char_md.char_props.read          = 1;
+    char_md.char_props.notify        = 1;
+    char_md.p_char_user_desc         = VersionCharName;
+    char_md.char_user_desc_size      = sizeof(VersionCharName);
+    char_md.char_user_desc_max_size  = sizeof(VersionCharName);
+    char_md.p_char_pf                = NULL;
+    char_md.p_user_desc_md           = NULL;
+    char_md.p_cccd_md                = NULL;
+    char_md.p_sccd_md                = NULL;
+
+    // Define the Version Characteristic UUID
+    ble_uuid.type = p_rileylink_service->uuid_type;
+    ble_uuid.uuid = BLE_UUID_RILEYLINK_VERSION_UUID;
+
+    // Set permissions on the Characteristic value
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+
+    // Attribute Metadata settings
+    attr_md.vloc       = BLE_GATTS_VLOC_USER;
     attr_md.rd_auth    = 0;
     attr_md.wr_auth    = 0;
     attr_md.vlen       = 0;
@@ -201,16 +255,15 @@ static uint32_t response_count_char_add(ble_rileylink_service_t * p_rileylink_se
     // Attribute Value settings
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
-    attr_char_value.init_len     = 1;
+    attr_char_value.init_len     = sizeof(FirmwareVersion);
     attr_char_value.init_offs    = 0;
-    attr_char_value.max_len      = 1;
-    attr_char_value.p_value      = NULL;
+    attr_char_value.max_len      = sizeof(FirmwareVersion);
+    attr_char_value.p_value      = (uint8_t*)FirmwareVersion;
 
     return sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
                                            &attr_char_value,
-                                           &p_rileylink_service->response_count_handles);
+                                           &p_rileylink_service->version_handles);
 }
-
 
 uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_service, const ble_rileylink_service_init_t * p_rileylink_service_init)
 {
@@ -264,14 +317,9 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
         return err_code;
     }
 
-    // Set initial value for response_count characteristic
-    ble_gatts_value_t new_value;
-    memset(&new_value, 0, sizeof(new_value));
-    new_value.len     = 1;
-    new_value.offset  = 0;
-    new_value.p_value = &(p_rileylink_service->response_count);
-    err_code = sd_ble_gatts_value_set(BLE_CONN_HANDLE_INVALID, p_rileylink_service->response_count_handles.value_handle, &new_value);
-    if (err_code != NRF_SUCCESS) {
+    err_code = version_char_add(p_rileylink_service);
+    if (err_code != NRF_SUCCESS)
+    {
         return err_code;
     }
 
