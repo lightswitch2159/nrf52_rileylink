@@ -81,7 +81,7 @@ static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        
 // YOUR_JOB: Use UUIDs for service(s) used in your application.
 static ble_uuid_t m_adv_uuids[] =                                               /**< Universally unique service identifiers. */
 {
-    {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}
+    {BLE_UUID_RILEYLINK_SERVICE_UUID, BLE_UUID_TYPE_BLE}
 };
 
 
@@ -548,6 +548,8 @@ static void advertising_init(void)
     ret_code_t             err_code;
     ble_advertising_init_t init;
 
+    m_adv_uuids[0].type = m_rileylink_service.uuid_type;
+
     memset(&init, 0, sizeof(init));
 
     init.advdata.name_type               = BLE_ADVDATA_FULL_NAME;
@@ -654,8 +656,8 @@ int main(void)
     ble_stack_init();
     gap_params_init();
     gatt_init();
-    advertising_init();
     services_init();
+    advertising_init();
     conn_params_init();
     peer_manager_init();
     data_relay_init(&m_rileylink_service);

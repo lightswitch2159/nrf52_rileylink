@@ -18,7 +18,7 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
 // RL Service UUID = 02350001-99c5-4197-b856-69219c2a3845
 //                   0235733b-99c5-4197-b856-69219c2a3845
 #define BLE_UUID_RILEYLINK_SERVICE_BASE_UUID    {0x45, 0x38, 0x2a, 0x9c, 0x21, 0x69, 0x56, 0xb8, \
-                                                 0x97, 0x41, 0xc5, 0x99, 0x00, 0x00, 0x35, 0x02}
+                                                 0x97, 0x41, 0xc5, 0x99, 0x3b, 0x73, 0x35, 0x02}
 #define BLE_UUID_RILEYLINK_SERVICE_UUID        0x733b
 
 #define LOCAL_CHAR_UUID                 0x1234                                      /**< Proprietary UUID for local characteristic. */
