@@ -95,4 +95,8 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
  */
 void ble_rileylink_service_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context);
 
+/* Send data via BLE DATA characteristic */
+uint32_t ble_rileylink_service_send_data(ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint8_t length);
+
+
 #endif //RILEYLINK_SERVICE_H

@@ -30,6 +30,7 @@
 #include "nrf_log_default_backends.h"
 
 #include "rileylink_service.h"
+#include "subg_rfspy_spi.h"
 #include "data_relay.h"
 #include "led_mode_handlers.h"
 
@@ -246,32 +247,8 @@ static void services_init(void)
     // 1. Initialize the RileyLink service
     rileylink_init.led_mode_write_handler = led_mode_write_handler;
     rileylink_init.data_write_handler = data_relay_ble_write_handler;
-
     err_code = ble_rileylink_service_init(&m_rileylink_service, &rileylink_init);
     APP_ERROR_CHECK(err_code);
-
-    /* YOUR_JOB: Add code to initialize the services used by the application.
-       ble_xxs_init_t                     xxs_init;
-       ble_yys_init_t                     yys_init;
-
-       // Initialize XXX Service.
-       memset(&xxs_init, 0, sizeof(xxs_init));
-
-       xxs_init.evt_handler                = NULL;
-       xxs_init.is_xxx_notify_supported    = true;
-       xxs_init.ble_xx_initial_value.level = 100;
-
-       err_code = ble_bas_init(&m_xxs, &xxs_init);
-       APP_ERROR_CHECK(err_code);
-
-       // Initialize YYY Service.
-       memset(&yys_init, 0, sizeof(yys_init));
-       yys_init.evt_handler                  = on_yys_evt;
-       yys_init.ble_yy_initial_value.counter = 0;
-
-       err_code = ble_yy_service_init(&yys_init, &yy_init);
-       APP_ERROR_CHECK(err_code);
-     */
 }
 
 
@@ -681,7 +658,8 @@ int main(void)
     services_init();
     conn_params_init();
     peer_manager_init();
-    subg_rfspy_spi_init();
+    data_relay_init(&m_rileylink_service);
+    subg_rfspy_spi_init(data_relay_spi_response_handler);
 
     // Start execution.
     NRF_LOG_INFO("RileyLink 2.0 started.");

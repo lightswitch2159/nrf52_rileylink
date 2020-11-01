@@ -229,3 +229,13 @@ void ble_rileylink_service_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_cont
             break;
     }
 }
+
+uint32_t ble_rileylink_service_send_data(ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint8_t length) {
+    ble_gatts_value_t new_value;
+    uint32_t err_code;
+    memset(&new_value, 0, sizeof(new_value));
+    new_value.len     = length;
+    new_value.offset  = 0;
+    new_value.p_value = (uint8_t*)data;
+    return sd_ble_gatts_value_set(BLE_CONN_HANDLE_INVALID, p_rileylink_service->data_char_handles.value_handle, &new_value);
+}

@@ -1,13 +1,28 @@
 
 #include "nrf_log.h"
+#include "app_error.h"
 
 #include "rileylink_service.h"
 #include "led_mode_handlers.h"
 #include "subg_rfspy_spi.h"
 
-void data_relay_ble_write_handler(uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint16_t data_len)
-{
-    NRF_LOG_INFO("Data written: %d bytes.", data_len);
+static ble_rileylink_service_t *m_rileylink_service;
 
-    run_command(data, data_len);
+void data_relay_init(ble_rileylink_service_t * p_rileylink_service) {
+    m_rileylink_service = p_rileylink_service;
 }
+
+void data_relay_ble_write_handler(uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint16_t length)
+{
+    NRF_LOG_INFO("Data received via BLE: %d bytes.", length);
+    run_command(data, length);
+}
+
+void data_relay_spi_response_handler(const uint8_t *data, uint8_t length) {
+    uint32_t   err_code;
+
+    NRF_LOG_INFO("Data received via SPI: %d bytes.", length);
+    err_code = ble_rileylink_service_send_data(m_rileylink_service, data, length);
+    APP_ERROR_CHECK(err_code);
+}
+
