@@ -15,9 +15,11 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
 
 
 
-// RL Service UUID = 02350001-99c5-4197-b856-69219c2a3846
-#define BLE_UUID_RILEYLINK_SERVICE_BASE_UUID    {0x46, 0x38, 0x2a, 0x9c, 0x21, 0x69, 0x56, 0xb8, \
+// RL Service UUID = 02350001-99c5-4197-b856-69219c2a3845
+//                   0235733b-99c5-4197-b856-69219c2a3845
+#define BLE_UUID_RILEYLINK_SERVICE_BASE_UUID    {0x45, 0x38, 0x2a, 0x9c, 0x21, 0x69, 0x56, 0xb8, \
                                                  0x97, 0x41, 0xc5, 0x99, 0x00, 0x00, 0x35, 0x02}
+#define BLE_UUID_RILEYLINK_SERVICE_UUID        0x733b
 
 #define LOCAL_CHAR_UUID                 0x1234                                      /**< Proprietary UUID for local characteristic. */
 #define APP_CFG_CHAR_LEN                20                                          /**< Size of the characteristic value being notified (in bytes). */
@@ -27,22 +29,37 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
 extern uint8_t rileylink_service_uuid_type;
 extern uint16_t rileylink_service_handle;
 
-// Service & characteristics UUIDs
-#define BLE_UUID_RILEYLINK_SERVICE_UUID        0x0001
-#define BLE_UUID_RILEYLINK_DATA_UUID           0x0002
-#define BLE_UUID_RILEYLINK_RESPONSE_COUNT_UUID 0x0003
-#define BLE_UUID_RILEYLINK_TIMER_UUID          0x0004
-#define BLE_UUID_RILEYLINK_CUSTOM_NAME_UUID    0x0005
-#define BLE_UUID_RILEYLINK_VERSION_UUID        0x0006
-#define BLE_UUID_RILEYLINK_LED_MODE_UUID       0x0007
+// Characteristics UUIDs
 
-// Characteristics:
-// Data:           0002
-// Response count: 0003
-// Timer tick:     0004
-// Custom name:    0005
-// Version:        0006
-// LED Mode:       0007
+// Data - c842e849-5028-42e2-867c-016adada9155
+#define BLE_UUID_RILEYLINK_DATA_BASE_UUID {0x55, 0x91, 0xda, 0xda, 0x6a, 0x01, 0x7c, 0x86, \
+                                           0xe2, 0x42, 0x28, 0x50, 0x49, 0xe8, 0x42, 0xc8}
+#define BLE_UUID_RILEYLINK_DATA_UUID 0xe849
+
+// Response Count - 6e6c7910-b89e-43a5-a0fe-50c5e2b81f4a
+#define BLE_UUID_RILEYLINK_RESPONSE_COUNT_BASE_UUID {0x4a, 0x1f, 0xb8, 0xe2, 0xc5, 0x50, 0xfe, 0xa0, \
+                                                     0xa5, 0x43, 0x9e, 0xb8, 0x10, 0x79, 0x6c, 0x6e}
+#define BLE_UUID_RILEYLINK_RESPONSE_COUNT_UUID 0x7910
+
+// Timer - 6e6c7910-b89e-43a5-78af-50c5e2b86f7e
+#define BLE_UUID_RILEYLINK_TIMER_BASE_UUID {0x7e, 0x6f, 0xb8, 0xe2, 0xc5, 0x50, 0xaf, 0x78, \
+                                            0xa5, 0x43, 0x9e, 0xb8, 0x10, 0x79, 0x6c, 0x6e}
+#define BLE_UUID_RILEYLINK_TIMER_UUID 0x7910
+
+// Custom Name - d93b2af0-1e28-11e4-8c21-0800200c9a66
+#define BLE_UUID_RILEYLINK_CUSTOM_NAME_BASE_UUID {0x66, 0x9a, 0x0c, 0x20, 0x00, 0x08, 0x21, 0x8c, \
+                                                  0xe4, 0x11, 0x28, 0x1e, 0xf0, 0x2a, 0x3b, 0xd9}
+#define BLE_UUID_RILEYLINK_CUSTOM_NAME_UUID 0x2af0
+
+// Version - 30d99dc9-7c91-4295-a051-0a104d238cf2
+#define BLE_UUID_RILEYLINK_VERSION_BASE_UUID {0xf2, 0x8c, 0x23, 0x4d, 0x10, 0x0a, 0x51, 0xa0, \
+                                              0x95, 0x42, 0x91, 0x7c, 0xc9, 0x9d, 0xd9, 0x30}
+#define BLE_UUID_RILEYLINK_VERSION_UUID 0x9dc9
+
+// LED Mode - c6d84241-f1a7-4f9c-a25f-fce16732f14e
+#define BLE_UUID_RILEYLINK_LED_MODE_BASE_UUID {0x4e, 0xf1, 0x32, 0x67, 0xe1, 0xfc, 0x5f, 0xa2, \
+                                               0x9c, 0x4f, 0xa7, 0xf1, 0x41, 0x42, 0xd8, 0xc6}
+#define BLE_UUID_RILEYLINK_LED_MODE_UUID 0x4241
 
 // Forward declaration of the custom_service_t type.
 typedef struct ble_rileylink_service_s ble_rileylink_service_t;

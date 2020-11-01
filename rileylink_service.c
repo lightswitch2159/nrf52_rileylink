@@ -79,10 +79,6 @@ static uint32_t led_mode_char_add(ble_rileylink_service_t * p_rileylink_service)
     char_md.p_char_user_desc         = LEDModeCharName;
     char_md.char_user_desc_size      = sizeof(LEDModeCharName);
     char_md.char_user_desc_max_size  = sizeof(LEDModeCharName);
-    char_md.p_char_pf                = NULL;
-    char_md.p_user_desc_md           = NULL;
-    char_md.p_cccd_md                = NULL;
-    char_md.p_sccd_md                = NULL;
 
     // Define the LED Nide Characteristic UUID
     ble_uuid.type = p_rileylink_service->uuid_type;
@@ -94,15 +90,11 @@ static uint32_t led_mode_char_add(ble_rileylink_service_t * p_rileylink_service)
 
     // Attribute Metadata settings
     attr_md.vloc       = BLE_GATTS_VLOC_STACK;
-    attr_md.rd_auth    = 0;
-    attr_md.wr_auth    = 0;
-    attr_md.vlen       = 0;
 
     // Attribute Value settings
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
     attr_char_value.init_len     = sizeof(uint8_t);
-    attr_char_value.init_offs    = 0;
     attr_char_value.max_len      = sizeof(uint8_t);
     attr_char_value.p_value      = NULL;
 
@@ -116,6 +108,7 @@ static uint32_t led_mode_char_add(ble_rileylink_service_t * p_rileylink_service)
  */
 static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
 {
+    uint32_t err_code;
     ble_gatts_char_md_t char_md;
     ble_gatts_attr_t    attr_char_value;
     ble_gatts_attr_md_t attr_md;
@@ -130,13 +123,16 @@ static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
     char_md.p_char_user_desc         = DataCharName;
     char_md.char_user_desc_size      = sizeof(DataCharName);
     char_md.char_user_desc_max_size  = sizeof(DataCharName);
-    char_md.p_char_pf                = NULL;
-    char_md.p_user_desc_md           = NULL;
-    char_md.p_cccd_md                = NULL;
-    char_md.p_sccd_md                = NULL;
 
     // Define the DATA Characteristic UUID
-    ble_uuid.type = p_rileylink_service->uuid_type;
+    ble_uuid128_t base_uuid = {BLE_UUID_RILEYLINK_DATA_BASE_UUID};
+    uint8_t uuid_type;
+    err_code = sd_ble_uuid_vs_add(&base_uuid, &uuid_type);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+    ble_uuid.type = uuid_type;
     ble_uuid.uuid = BLE_UUID_RILEYLINK_DATA_UUID;
 
     // Set permissions on the Characteristic value
@@ -145,15 +141,11 @@ static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
 
     // Attribute Metadata settings
     attr_md.vloc       = BLE_GATTS_VLOC_STACK;
-    attr_md.rd_auth    = 0;
-    attr_md.wr_auth    = 0;
     attr_md.vlen       = 1;
 
     // Attribute Value settings
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
-    attr_char_value.init_len     = 0;
-    attr_char_value.init_offs    = 0;
     attr_char_value.max_len      = 220;
     attr_char_value.p_value      = NULL;
 
@@ -167,6 +159,7 @@ static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
  */
 static uint32_t response_count_char_add(ble_rileylink_service_t * p_rileylink_service)
 {
+    uint32_t err_code;
     ble_gatts_char_md_t char_md;
     ble_gatts_attr_t    attr_char_value;
     ble_gatts_attr_md_t attr_md;
@@ -181,13 +174,16 @@ static uint32_t response_count_char_add(ble_rileylink_service_t * p_rileylink_se
     char_md.p_char_user_desc         = ResponseCountCharName;
     char_md.char_user_desc_size      = sizeof(ResponseCountCharName);
     char_md.char_user_desc_max_size  = sizeof(ResponseCountCharName);
-    char_md.p_char_pf                = NULL;
-    char_md.p_user_desc_md           = NULL;
-    char_md.p_cccd_md                = NULL;
-    char_md.p_sccd_md                = NULL;
 
     // Define the Response Count Characteristic UUID
-    ble_uuid.type = p_rileylink_service->uuid_type;
+    ble_uuid128_t base_uuid = {BLE_UUID_RILEYLINK_RESPONSE_COUNT_BASE_UUID};
+    uint8_t uuid_type;
+    err_code = sd_ble_uuid_vs_add(&base_uuid, &uuid_type);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+    ble_uuid.type = uuid_type;
     ble_uuid.uuid = BLE_UUID_RILEYLINK_RESPONSE_COUNT_UUID;
 
     // Set permissions on the Characteristic value
@@ -196,16 +192,12 @@ static uint32_t response_count_char_add(ble_rileylink_service_t * p_rileylink_se
 
     // Attribute Metadata settings
     attr_md.vloc       = BLE_GATTS_VLOC_USER;
-    attr_md.rd_auth    = 0;
-    attr_md.wr_auth    = 0;
-    attr_md.vlen       = 0;
 
     // Attribute Value settings
     p_rileylink_service->response_count = 0;
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
     attr_char_value.init_len     = 1;
-    attr_char_value.init_offs    = 0;
     attr_char_value.max_len      = 1;
     attr_char_value.p_value      = &(p_rileylink_service->response_count);
 
@@ -219,6 +211,7 @@ static uint32_t response_count_char_add(ble_rileylink_service_t * p_rileylink_se
  */
 static uint32_t version_char_add(ble_rileylink_service_t * p_rileylink_service)
 {
+    uint32_t err_code;
     ble_gatts_char_md_t char_md;
     ble_gatts_attr_t    attr_char_value;
     ble_gatts_attr_md_t attr_md;
@@ -233,13 +226,16 @@ static uint32_t version_char_add(ble_rileylink_service_t * p_rileylink_service)
     char_md.p_char_user_desc         = VersionCharName;
     char_md.char_user_desc_size      = sizeof(VersionCharName);
     char_md.char_user_desc_max_size  = sizeof(VersionCharName);
-    char_md.p_char_pf                = NULL;
-    char_md.p_user_desc_md           = NULL;
-    char_md.p_cccd_md                = NULL;
-    char_md.p_sccd_md                = NULL;
 
     // Define the Version Characteristic UUID
-    ble_uuid.type = p_rileylink_service->uuid_type;
+    ble_uuid128_t base_uuid = {BLE_UUID_RILEYLINK_VERSION_BASE_UUID};
+    uint8_t uuid_type;
+    err_code = sd_ble_uuid_vs_add(&base_uuid, &uuid_type);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+    ble_uuid.type = uuid_type;
     ble_uuid.uuid = BLE_UUID_RILEYLINK_VERSION_UUID;
 
     // Set permissions on the Characteristic value
@@ -248,15 +244,11 @@ static uint32_t version_char_add(ble_rileylink_service_t * p_rileylink_service)
 
     // Attribute Metadata settings
     attr_md.vloc       = BLE_GATTS_VLOC_USER;
-    attr_md.rd_auth    = 0;
-    attr_md.wr_auth    = 0;
-    attr_md.vlen       = 0;
 
     // Attribute Value settings
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
     attr_char_value.init_len     = sizeof(FirmwareVersion);
-    attr_char_value.init_offs    = 0;
     attr_char_value.max_len      = sizeof(FirmwareVersion);
     attr_char_value.p_value      = (uint8_t*)FirmwareVersion;
 
