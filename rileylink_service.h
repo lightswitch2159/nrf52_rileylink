@@ -67,8 +67,10 @@ typedef struct ble_rileylink_service_s
     uint16_t                            conn_handle;
     uint16_t                            service_handle;
     uint8_t                             uuid_type;
+    uint8_t                             response_count;
     ble_gatts_char_handles_t            led_mode_char_handles;
     ble_gatts_char_handles_t            data_char_handles;
+    ble_gatts_char_handles_t            response_count_handles;
     ble_rileylink_service_led_mode_write_handler_t led_mode_write_handler;
     ble_rileylink_service_data_write_handler_t data_write_handler;
 

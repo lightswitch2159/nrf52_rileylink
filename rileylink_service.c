@@ -12,7 +12,8 @@
 #include "app_error.h"
 
 static const uint8_t LEDModeCharName[] = "LED Mode";
-static const uint8_t DATACharName[] = "DATA";
+static const uint8_t DataCharName[] = "Data";
+static const uint8_t ResponseCountCharName[] = "Response Count";
 
 /**@brief Function for handling the Connect event.
  *
@@ -108,7 +109,7 @@ static uint32_t led_mode_char_add(ble_rileylink_service_t * p_rileylink_service)
                                            &p_rileylink_service->led_mode_char_handles);
 }
 
-/**@brief Function for adding the DATA mode characteristic.
+/**@brief Function for adding the Data characteristic.
  *
  */
 static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
@@ -124,9 +125,9 @@ static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
 
     char_md.char_props.read          = 1;
     char_md.char_props.write         = 1;
-    char_md.p_char_user_desc         = DATACharName;
-    char_md.char_user_desc_size      = sizeof(DATACharName);
-    char_md.char_user_desc_max_size  = sizeof(DATACharName);
+    char_md.p_char_user_desc         = DataCharName;
+    char_md.char_user_desc_size      = sizeof(DataCharName);
+    char_md.char_user_desc_max_size  = sizeof(DataCharName);
     char_md.p_char_pf                = NULL;
     char_md.p_user_desc_md           = NULL;
     char_md.p_cccd_md                = NULL;
@@ -159,6 +160,58 @@ static uint32_t data_char_add(ble_rileylink_service_t * p_rileylink_service)
                                            &p_rileylink_service->data_char_handles);
 }
 
+/**@brief Function for adding the Response Count characteristic.
+ *
+ */
+static uint32_t response_count_char_add(ble_rileylink_service_t * p_rileylink_service)
+{
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_t    attr_char_value;
+    ble_gatts_attr_md_t attr_md;
+    ble_uuid_t          ble_uuid;
+
+    memset(&char_md, 0, sizeof(char_md));
+    memset(&attr_md, 0, sizeof(attr_md));
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    char_md.char_props.read          = 1;
+    char_md.char_props.notify        = 1;
+    char_md.p_char_user_desc         = ResponseCountCharName;
+    char_md.char_user_desc_size      = sizeof(ResponseCountCharName);
+    char_md.char_user_desc_max_size  = sizeof(ResponseCountCharName);
+    char_md.p_char_pf                = NULL;
+    char_md.p_user_desc_md           = NULL;
+    char_md.p_cccd_md                = NULL;
+    char_md.p_sccd_md                = NULL;
+
+    // Define the Response Count Characteristic UUID
+    ble_uuid.type = p_rileylink_service->uuid_type;
+    ble_uuid.uuid = BLE_UUID_RILEYLINK_RESPONSE_COUNT_UUID;
+
+    // Set permissions on the Characteristic value
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+
+    // Attribute Metadata settings
+    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth    = 0;
+    attr_md.wr_auth    = 0;
+    attr_md.vlen       = 0;
+
+    // Attribute Value settings
+    attr_char_value.p_uuid       = &ble_uuid;
+    attr_char_value.p_attr_md    = &attr_md;
+    attr_char_value.init_len     = 1;
+    attr_char_value.init_offs    = 0;
+    attr_char_value.max_len      = 1;
+    attr_char_value.p_value      = NULL;
+
+    return sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
+                                           &attr_char_value,
+                                           &p_rileylink_service->response_count_handles);
+}
+
+
 uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_service, const ble_rileylink_service_init_t * p_rileylink_service_init)
 {
     uint32_t   err_code;
@@ -183,6 +236,8 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
     ble_uuid.type = p_rileylink_service->uuid_type;
     ble_uuid.uuid = BLE_UUID_RILEYLINK_SERVICE_UUID;
 
+    p_rileylink_service->response_count = 0;
+
     // Set up and add the service
     err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_uuid, &p_rileylink_service->service_handle);
     if (err_code != NRF_SUCCESS)
@@ -202,7 +257,24 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
     {
         return err_code;
     }
-    
+
+    err_code = response_count_char_add(p_rileylink_service);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+    // Set initial value for response_count characteristic
+    ble_gatts_value_t new_value;
+    memset(&new_value, 0, sizeof(new_value));
+    new_value.len     = 1;
+    new_value.offset  = 0;
+    new_value.p_value = &(p_rileylink_service->response_count);
+    err_code = sd_ble_gatts_value_set(BLE_CONN_HANDLE_INVALID, p_rileylink_service->response_count_handles.value_handle, &new_value);
+    if (err_code != NRF_SUCCESS) {
+        return err_code;
+    }
+
     return NRF_SUCCESS;
 }
 
@@ -233,9 +305,32 @@ void ble_rileylink_service_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_cont
 uint32_t ble_rileylink_service_send_data(ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint8_t length) {
     ble_gatts_value_t new_value;
     uint32_t err_code;
+    uint16_t response_count_length;
+    ble_gatts_hvx_params_t hvx_params;
+
     memset(&new_value, 0, sizeof(new_value));
     new_value.len     = length;
     new_value.offset  = 0;
     new_value.p_value = (uint8_t*)data;
-    return sd_ble_gatts_value_set(BLE_CONN_HANDLE_INVALID, p_rileylink_service->data_char_handles.value_handle, &new_value);
+    err_code = sd_ble_gatts_value_set(BLE_CONN_HANDLE_INVALID, p_rileylink_service->data_char_handles.value_handle, &new_value);
+    if (err_code != NRF_SUCCESS) {
+        return err_code;
+    }
+
+    p_rileylink_service->response_count++;
+
+    if (p_rileylink_service->conn_handle != BLE_CONN_HANDLE_INVALID) {
+        response_count_length = 1;
+        memset(&hvx_params, 0, sizeof(hvx_params));
+        hvx_params.handle = p_rileylink_service->response_count_handles.value_handle;
+        hvx_params.p_data = &(p_rileylink_service->response_count);
+        hvx_params.p_len = &response_count_length;
+        hvx_params.type = BLE_GATT_HVX_NOTIFICATION;
+
+        err_code = sd_ble_gatts_hvx(p_rileylink_service->conn_handle, &hvx_params);
+        if (err_code != NRF_SUCCESS) {
+            NRF_LOG_INFO("sd_ble_gatts_hvx error: 0x%x", err_code);
+        }
+    }
+    return err_code;
 }
