@@ -16,7 +16,7 @@ void data_relay_ble_write_handler(const uint8_t *data, uint16_t length)
 {
     NRF_LOG_INFO("Data received via BLE: %d bytes.", length);
     if (length >= 2) {
-        run_command(data+1, length-1);
+        subg_rfspy_spi_run_command(data+1, length-1);
     }
 }
 

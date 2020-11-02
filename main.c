@@ -24,6 +24,7 @@
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
 #include "nrf_pwr_mgmt.h"
+#include "nrf_drv_gpiote.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -37,14 +38,15 @@
 
 #define DEVICE_NAME                     "RileyLink2"                             /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME               "Pete Schwamb"                          /**< Manufacturer. Will be passed to Device Information Service. */
+
 #define APP_ADV_INTERVAL                300                                     /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
 
 #define APP_ADV_DURATION                18000                                   /**< The advertising duration (180 seconds) in units of 10 milliseconds. */
 #define APP_BLE_OBSERVER_PRIO           3                                       /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 #define APP_BLE_CONN_CFG_TAG            1                                       /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(100, UNIT_1_25_MS)        /**< Minimum acceptable connection interval (0.1 seconds). */
-#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(200, UNIT_1_25_MS)        /**< Maximum acceptable connection interval (0.2 second). */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(30, UNIT_1_25_MS)        /**< Minimum acceptable connection interval (0.1 seconds). */
+#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(90, UNIT_1_25_MS)        /**< Maximum acceptable connection interval (0.2 second). */
 #define SLAVE_LATENCY                   0                                       /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)         /**< Connection supervisory timeout (4 seconds). */
 
@@ -335,8 +337,13 @@ static void sleep_mode_enter(void)
     APP_ERROR_CHECK(err_code);
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
-    err_code = sd_power_system_off();
-    APP_ERROR_CHECK(err_code);
+
+#ifdef DEBUG_NRF
+     (void) sd_power_system_off();
+     while(1);
+#else
+      APP_ERROR_CHECK(sd_power_system_off());
+#endif  // DEBUG_NRF
 }
 
 
@@ -641,6 +648,27 @@ static void advertising_start(bool erase_bonds)
     }
 }
 
+void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
+{
+    subg_rfspy_spi_data_available();
+}
+
+static void gpio_init(void)
+{
+    ret_code_t err_code;
+
+    err_code = nrf_drv_gpiote_init();
+    APP_ERROR_CHECK(err_code);
+
+    // TODO: Do we need hi_accu?
+    nrf_drv_gpiote_in_config_t in_config = GPIOTE_CONFIG_IN_SENSE_LOTOHI(true);
+    in_config.pull = NRF_GPIO_PIN_NOPULL;
+
+    err_code = nrf_drv_gpiote_in_init(SUBG_RFSPY_RECEIVE_INTERRUPT_PIN, &in_config, in_pin_handler);
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_gpiote_in_event_enable(SUBG_RFSPY_RECEIVE_INTERRUPT_PIN, true);
+}
 
 /**@brief Function for application main entry.
  */
@@ -651,6 +679,7 @@ int main(void)
     // Initialize.
     log_init();
     timers_init();
+    gpio_init();
     buttons_leds_init(&erase_bonds);
     power_management_init();
     ble_stack_init();

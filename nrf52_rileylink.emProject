@@ -142,6 +142,7 @@
       <file file_name="subg_rfspy_spi.c" />
       <file file_name="subg_rfspy_spi.h" />
     </folder>
+    <configuration Name="Debug" c_preprocessor_definitions="" />
   </project>
   <configuration
     Name="Release"

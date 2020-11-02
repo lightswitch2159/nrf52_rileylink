@@ -8,12 +8,15 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
                      ble_rileylink_service_on_ble_evt, &_name)
 
 
+#define SUBG_RFSPY_RECEIVE_INTERRUPT_PIN 30
+
 #define SUBG_RFSPY_SPI_BUFFER_LEN 255
 
 typedef void (subg_rfspy_spi_response_handler_t) (const uint8_t *data, uint8_t len);
 
 void subg_rfspy_spi_init(subg_rfspy_spi_response_handler_t response_handler);
-void run_command(const uint8_t *data, uint8_t data_len);
+void subg_rfspy_spi_run_command(const uint8_t *data, uint8_t data_len);
+void subg_rfspy_spi_data_available();
 
 
 #endif // SPI_H

@@ -5,7 +5,7 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 #include "nrf_delay.h"
-#include "nrf_gpio.h"
+#include "nrf_drv_gpiote.h"
 
 #include "subg_rfspy_spi.h"
 
@@ -30,12 +30,40 @@ static uint8_t size_rx_buf[2];  /**< Size exchange RX buffer. */
 
 static subg_rfspy_spi_response_handler_t *m_response_handler = NULL;
 
-static enum State{Size,Xfer,Idle} state;
+static volatile enum State{Size,Xfer,Idle} state;
 
 static void size_exchange();
 static void xfer_data();
 
 void do_spi();
+
+static bool is_response_ready()
+{
+   return nrf_drv_gpiote_in_is_set(SUBG_RFSPY_RECEIVE_INTERRUPT_PIN);
+}
+
+static void start_spi_transaction()
+{
+    nrf_gpio_pin_clear(NRFX_SPIM_SS_PIN);
+    nrf_delay_ms(1);
+    size_exchange();
+}
+
+static void end_spi_transaction()
+{
+    nrf_delay_ms(1);
+    nrf_gpio_pin_set(NRFX_SPIM_SS_PIN);
+    state = Idle;
+    if (is_response_ready())
+    {
+        state = Size;
+        NRF_LOG_INFO("ending spi: have response!");
+        nrf_delay_ms(1);
+        start_spi_transaction();
+    } else {
+        NRF_LOG_INFO("ending spi: going to wait for interrupt");
+    }
+}
 
 void spim_event_handler(nrfx_spim_evt_t const * p_event,
                        void *                  p_context)
@@ -58,41 +86,34 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
 
     switch (state) {
     case Size:
+      NRF_LOG_INFO("finished size xfer");
       if (subg_rfspy_tx_len > 0 || size_rx_buf[1] > 0) {
         if (size_rx_buf[1] > 0) {
           subg_rfspy_rx_len = size_rx_buf[1];
         }
         //NRF_LOG_INFO("Size->xfer (rx=%d, tx=%d)", subg_rfspy_rx_len, subg_rfspy_tx_len);
         state = Xfer;
-        nrf_delay_ms(5);
+        nrf_delay_ms(1);
         xfer_data();
       } else {
-        //NRF_LOG_INFO("Size");
-        nrf_delay_ms(10);
-        size_exchange();
+        NRF_LOG_INFO("Size finished: Empty.");
+        end_spi_transaction();
       }
       break;
     case Xfer:
+      NRF_LOG_INFO("finished data xfer");
       if (subg_rfspy_rx_len == 0) {
-        NRF_LOG_INFO("Xfer->Size");
-        state = Size;
-        nrf_delay_ms(1);
-        nrf_gpio_pin_set(NRFX_SPIM_SS_PIN);
-        nrf_delay_ms(10);
-        nrf_gpio_pin_clear(NRFX_SPIM_SS_PIN);
-        nrf_delay_ms(1);
-        size_exchange();
+        NRF_LOG_INFO("Xfer finished, no response");
       } else {
         // data in subg_rfspy_rx_buf now
         if (m_response_handler != NULL) {
             NRF_LOG_INFO("Received response:");
             NRF_LOG_HEXDUMP_INFO(subg_rfspy_rx_buf, subg_rfspy_rx_len);
+            m_response_handler(subg_rfspy_rx_buf, subg_rfspy_rx_len);
         }
-        NRF_LOG_INFO("Xfer->Idle");
-        state = Idle;
-        NRF_LOG_INFO("Xfer finished");
-        nrf_gpio_pin_set(NRFX_SPIM_SS_PIN);
+        NRF_LOG_INFO("Xfer finished with response");
       }
+      end_spi_transaction();
       break;
     case Idle:
       NRF_LOG_INFO("finished spi event during idle???");
@@ -120,11 +141,10 @@ void subg_rfspy_spi_init(subg_rfspy_spi_response_handler_t response_handler) {
 
     // Start execution.
     NRF_LOG_INFO("RileyLink 2.0 spi started.");
-
     state = Idle;
 }
 
-void run_command(const uint8_t *data, uint8_t data_len)
+void subg_rfspy_spi_run_command(const uint8_t *data, uint8_t data_len)
 {
   if (state != Idle) {
     NRF_LOG_INFO("Skipped command: busy");
@@ -137,15 +157,25 @@ void run_command(const uint8_t *data, uint8_t data_len)
   subg_rfspy_tx_len = data_len;
   subg_rfspy_rx_len = 0;
   memcpy(subg_rfspy_tx_buf, data, data_len);
-  nrf_gpio_pin_clear(NRFX_SPIM_SS_PIN);
-  nrf_delay_ms(1);
-  size_exchange();
+  start_spi_transaction();
+}
+
+void subg_rfspy_spi_data_available()
+{
+    if (state == Idle) {
+        NRF_LOG_INFO("Data interrupt: starting spi transaction");
+        state = Size;
+        start_spi_transaction();
+    } else {
+        NRF_LOG_INFO("Skipped data interrupt: busy");
+    }
 }
 
 nrfx_spim_xfer_desc_t size_xfer_desc = NRFX_SPIM_XFER_TRX(size_tx_buf, 0, size_rx_buf, 0);
 
-void size_exchange() {
+static void size_exchange() {
   // Send length
+  NRF_LOG_INFO("Starting size exchange");
   spi_xfer_done = false;
   size_tx_buf[0] = 0x99;                   // marker
   size_tx_buf[1] = subg_rfspy_tx_len;      // length of command
@@ -156,7 +186,8 @@ void size_exchange() {
 
 nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(subg_rfspy_tx_buf, 0, subg_rfspy_rx_buf, 0);
 
-void xfer_data() {
+static void xfer_data() {
+  NRF_LOG_INFO("Starting data exchange");
   spi_xfer_done = false;
   xfer_desc.tx_length = size_tx_buf[1];
   xfer_desc.rx_length = size_rx_buf[1];
