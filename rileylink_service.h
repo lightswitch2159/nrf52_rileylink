@@ -23,9 +23,6 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
 
 #define BLE_RILEYLINK_DATA_MAX_LENGTH 220
 
-extern uint8_t rileylink_service_uuid_type;
-extern uint16_t rileylink_service_handle;
-
 // Characteristics UUIDs
 
 // Data - c842e849-5028-42e2-867c-016adada9155
@@ -85,9 +82,10 @@ typedef struct ble_rileylink_service_s
     uint8_t                             timer_tick_count;
     ble_gatts_char_handles_t            led_mode_char_handles;
     ble_gatts_char_handles_t            data_char_handles;
-    ble_gatts_char_handles_t            response_count_handles;
-    ble_gatts_char_handles_t            version_handles;
-    ble_gatts_char_handles_t            timer_tick_handles;
+    ble_gatts_char_handles_t            response_count_char_handles;
+    ble_gatts_char_handles_t            version_char_handles;
+    ble_gatts_char_handles_t            timer_tick_char_handles;
+    ble_gatts_char_handles_t            custom_name_char_handles;
     ble_rileylink_service_led_mode_write_handler_t led_mode_write_handler;
     ble_rileylink_service_data_write_handler_t data_write_handler;
 

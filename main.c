@@ -15,7 +15,6 @@
 #include "nrf_sdh_soc.h"
 #include "nrf_sdh_ble.h"
 #include "app_timer.h"
-#include "fds.h"
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 #include "bsp_btn_ble.h"
@@ -64,7 +63,6 @@
 #define SEC_PARAM_MAX_KEY_SIZE          16                                      /**< Maximum encryption key size. */
 
 #define DEAD_BEEF                       0xDEADBEEF                              /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
-
 
 NRF_BLE_GATT_DEF(m_gatt);                                                       /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                                                         /**< Context for the Queued Write module.*/
@@ -644,6 +642,7 @@ static void gpio_init(void)
     nrf_drv_gpiote_in_event_enable(SUBG_RFSPY_RECEIVE_INTERRUPT_PIN, true);
 }
 
+
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -653,6 +652,7 @@ int main(void)
     // Initialize.
     log_init();
     timers_init();
+    flash_storage_init();
     gpio_init();
     buttons_leds_init(&erase_bonds);
     power_management_init();

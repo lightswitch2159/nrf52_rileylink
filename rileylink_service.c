@@ -1,6 +1,4 @@
 
-#include "rileylink_service.h"
-
 #include "nordic_common.h"
 #include "sdk_errors.h"
 #include "sdk_common.h"
@@ -12,11 +10,15 @@
 #include "nrf_ble_qwr.h"
 #include "app_error.h"
 
+#include "rileylink_service.h"
+#include "rileylink_config.h"
+
 static const uint8_t LEDModeCharName[] = "LED Mode";
 static const uint8_t DataCharName[] = "Data";
 static const uint8_t ResponseCountCharName[] = "Response Count";
 static const uint8_t VersionCharName[] = "Version";
 static const uint8_t TimerTickCharName[] = "Timer Tick";
+static const uint8_t CustomNameCharName[] = "Custom Name";
 static uint8_t FirmwareVersion[] = "nrf52_rileylink 1.0";
 
 /**@brief Function for handling the Connect event.
@@ -40,6 +42,12 @@ static void on_disconnect(ble_rileylink_service_t * p_rileylink_service, ble_evt
     p_rileylink_service->conn_handle = BLE_CONN_HANDLE_INVALID;
 }
 
+static void on_custom_name_update(ble_rileylink_service_t * p_rileylink_service, const uint8_t *name, uint16_t len)
+{
+    memcpy(rileylink_config.device_name, name, len);
+    rileylink_config.device_name
+}
+
 /**@brief Function for handling the Write event.
  *
  * @param[in] p_led_service   LED Service structure.
@@ -55,10 +63,16 @@ static void on_write(ble_rileylink_service_t * p_rileylink_service, ble_evt_t co
     {
         p_rileylink_service->led_mode_write_handler(p_ble_evt->evt.gap_evt.conn_handle, p_rileylink_service, p_evt_write->data[0]);
     }
-    else if (   (p_evt_write->handle == p_rileylink_service->data_char_handles.value_handle)
-        && (p_rileylink_service->data_write_handler != NULL))
+    else if ((p_evt_write->handle == p_rileylink_service->data_char_handles.value_handle)
+          && (p_rileylink_service->data_write_handler != NULL))
     {
         p_rileylink_service->data_write_handler(p_evt_write->data, p_evt_write->len);
+    }
+    else if ((p_evt_write->handle == p_rileylink_service->custom_name_char_handles.value_handle)
+          && (p_rileylink_service->data_write_handler != NULL))
+    {
+        NRF_LOG_DEBUG("Name update!");
+        on_custom_name_update(p_rileylink_service, p_evt_write->data, p_evt_write->len);
     }
     else 
     {
@@ -215,7 +229,7 @@ static uint32_t response_count_char_add(ble_rileylink_service_t * p_rileylink_se
 
     return sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
                                            &attr_char_value,
-                                           &p_rileylink_service->response_count_handles);
+                                           &p_rileylink_service->response_count_char_handles);
 }
 
 /**@brief Function for adding the Version characteristic.
@@ -265,7 +279,7 @@ static uint32_t version_char_add(ble_rileylink_service_t * p_rileylink_service)
 
     return sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
                                            &attr_char_value,
-                                           &p_rileylink_service->version_handles);
+                                           &p_rileylink_service->version_char_handles);
 }
 
 /**@brief Function for adding the Timer Tick characteristic.
@@ -317,7 +331,66 @@ static uint32_t timer_tick_char_add(ble_rileylink_service_t * p_rileylink_servic
 
     return sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
                                            &attr_char_value,
-                                           &p_rileylink_service->timer_tick_handles);
+                                           &p_rileylink_service->timer_tick_char_handles);
+}
+
+/**@brief Function for adding the Custom Name characteristic.
+ *
+ */
+static uint32_t custom_name_char_add(ble_rileylink_service_t * p_rileylink_service)
+{
+    uint32_t err_code;
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_t    attr_char_value;
+    ble_gatts_attr_md_t attr_md;
+    ble_uuid_t          ble_uuid;
+
+    memset(&char_md, 0, sizeof(char_md));
+    memset(&attr_md, 0, sizeof(attr_md));
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    char_md.char_props.read          = 1;
+    char_md.char_props.write         = 1;
+    char_md.p_char_user_desc         = CustomNameCharName;
+    char_md.char_user_desc_size      = sizeof(CustomNameCharName);
+    char_md.char_user_desc_max_size  = sizeof(CustomNameCharName);
+
+    // Define the DATA Characteristic UUID
+    ble_uuid128_t base_uuid = {BLE_UUID_RILEYLINK_CUSTOM_NAME_BASE_UUID};
+    uint8_t uuid_type;
+    err_code = sd_ble_uuid_vs_add(&base_uuid, &uuid_type);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+    ble_uuid.type = uuid_type;
+    ble_uuid.uuid = BLE_UUID_RILEYLINK_CUSTOM_NAME_UUID;
+
+    // Set permissions on the Characteristic value
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+
+    // Attribute Metadata settings
+    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
+    attr_md.vlen       = 1;
+
+    // Attribute Value settings
+    attr_char_value.p_uuid       = &ble_uuid;
+    attr_char_value.p_attr_md    = &attr_md;
+    attr_char_value.max_len      = CUSTOM_RILEYLINK_NAME_MAX_LEN;
+    attr_char_value.p_value      = NULL;
+
+    err_code = sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
+                                           &attr_char_value,
+                                           &p_rileylink_service->custom_name_char_handles);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
+
+
+    return NRF_SUCCESS;
 }
 
 
@@ -385,6 +458,12 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
         return err_code;
     }
 
+    err_code = custom_name_char_add(p_rileylink_service);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+
     return NRF_SUCCESS;
 }
 
@@ -434,7 +513,7 @@ uint32_t ble_rileylink_service_send_data(ble_rileylink_service_t * p_rileylink_s
     if (p_rileylink_service->conn_handle != BLE_CONN_HANDLE_INVALID) {
         response_count_length = 1;
         memset(&hvx_params, 0, sizeof(hvx_params));
-        hvx_params.handle = p_rileylink_service->response_count_handles.value_handle;
+        hvx_params.handle = p_rileylink_service->response_count_char_handles.value_handle;
         hvx_params.p_data = &(p_rileylink_service->response_count);
         hvx_params.p_len = &response_count_length;
         hvx_params.type = BLE_GATT_HVX_NOTIFICATION;
@@ -458,7 +537,7 @@ void ble_rileylink_service_timer_tick(ble_rileylink_service_t * p_rileylink_serv
         ble_gatts_hvx_params_t hvx_params;
         uint16_t timer_tick_length = 1;
         memset(&hvx_params, 0, sizeof(hvx_params));
-        hvx_params.handle = p_rileylink_service->timer_tick_handles.value_handle;
+        hvx_params.handle = p_rileylink_service->timer_tick_char_handles.value_handle;
         hvx_params.p_data = &(p_rileylink_service->timer_tick_count);
         hvx_params.p_len = &timer_tick_length;
         hvx_params.type = BLE_GATT_HVX_NOTIFICATION;
