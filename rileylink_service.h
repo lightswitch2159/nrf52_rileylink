@@ -39,9 +39,9 @@ extern uint16_t rileylink_service_handle;
 #define BLE_UUID_RILEYLINK_RESPONSE_COUNT_UUID 0x7910
 
 // Timer - 6e6c7910-b89e-43a5-78af-50c5e2b86f7e
-#define BLE_UUID_RILEYLINK_TIMER_BASE_UUID {0x7e, 0x6f, 0xb8, 0xe2, 0xc5, 0x50, 0xaf, 0x78, \
-                                            0xa5, 0x43, 0x9e, 0xb8, 0x10, 0x79, 0x6c, 0x6e}
-#define BLE_UUID_RILEYLINK_TIMER_UUID 0x7910
+#define BLE_UUID_RILEYLINK_TIMER_TICK_BASE_UUID {0x7e, 0x6f, 0xb8, 0xe2, 0xc5, 0x50, 0xaf, 0x78, \
+                                                 0xa5, 0x43, 0x9e, 0xb8, 0x10, 0x79, 0x6c, 0x6e}
+#define BLE_UUID_RILEYLINK_TIMER_TICK_UUID 0x7910
 
 // Custom Name - d93b2af0-1e28-11e4-8c21-0800200c9a66
 #define BLE_UUID_RILEYLINK_CUSTOM_NAME_BASE_UUID {0x66, 0x9a, 0x0c, 0x20, 0x00, 0x08, 0x21, 0x8c, \
@@ -82,10 +82,12 @@ typedef struct ble_rileylink_service_s
     uint16_t                            service_handle;
     uint8_t                             uuid_type;
     uint8_t                             response_count;
+    uint8_t                             timer_tick_count;
     ble_gatts_char_handles_t            led_mode_char_handles;
     ble_gatts_char_handles_t            data_char_handles;
     ble_gatts_char_handles_t            response_count_handles;
     ble_gatts_char_handles_t            version_handles;
+    ble_gatts_char_handles_t            timer_tick_handles;
     ble_rileylink_service_led_mode_write_handler_t led_mode_write_handler;
     ble_rileylink_service_data_write_handler_t data_write_handler;
 
@@ -115,5 +117,7 @@ void ble_rileylink_service_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_cont
 /* Send data via BLE DATA characteristic */
 uint32_t ble_rileylink_service_send_data(ble_rileylink_service_t * p_rileylink_service, const uint8_t *data, uint8_t length);
 
+/* Fire the timer tick */
+void ble_rileylink_service_timer_tick(ble_rileylink_service_t * p_rileylink_service);
 
 #endif //RILEYLINK_SERVICE_H

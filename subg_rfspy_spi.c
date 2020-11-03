@@ -57,11 +57,8 @@ static void end_spi_transaction()
     if (is_response_ready())
     {
         state = Size;
-        NRF_LOG_INFO("ending spi: have response!");
         nrf_delay_ms(1);
         start_spi_transaction();
-    } else {
-        NRF_LOG_INFO("ending spi: going to wait for interrupt");
     }
 }
 
@@ -86,7 +83,6 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
 
     switch (state) {
     case Size:
-      NRF_LOG_INFO("finished size xfer");
       if (subg_rfspy_tx_len > 0 || size_rx_buf[1] > 0) {
         if (size_rx_buf[1] > 0) {
           subg_rfspy_rx_len = size_rx_buf[1];
@@ -101,7 +97,6 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
       }
       break;
     case Xfer:
-      NRF_LOG_INFO("finished data xfer");
       if (subg_rfspy_rx_len == 0) {
         NRF_LOG_INFO("Xfer finished, no response");
       } else {
@@ -111,7 +106,6 @@ void spim_event_handler(nrfx_spim_evt_t const * p_event,
             NRF_LOG_HEXDUMP_INFO(subg_rfspy_rx_buf, subg_rfspy_rx_len);
             m_response_handler(subg_rfspy_rx_buf, subg_rfspy_rx_len);
         }
-        NRF_LOG_INFO("Xfer finished with response");
       }
       end_spi_transaction();
       break;
@@ -163,7 +157,6 @@ void subg_rfspy_spi_run_command(const uint8_t *data, uint8_t data_len)
 void subg_rfspy_spi_data_available()
 {
     if (state == Idle) {
-        NRF_LOG_INFO("Data interrupt: starting spi transaction");
         state = Size;
         start_spi_transaction();
     } else {
@@ -175,7 +168,6 @@ nrfx_spim_xfer_desc_t size_xfer_desc = NRFX_SPIM_XFER_TRX(size_tx_buf, 0, size_r
 
 static void size_exchange() {
   // Send length
-  NRF_LOG_INFO("Starting size exchange");
   spi_xfer_done = false;
   size_tx_buf[0] = 0x99;                   // marker
   size_tx_buf[1] = subg_rfspy_tx_len;      // length of command
@@ -187,7 +179,6 @@ static void size_exchange() {
 nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(subg_rfspy_tx_buf, 0, subg_rfspy_rx_buf, 0);
 
 static void xfer_data() {
-  NRF_LOG_INFO("Starting data exchange");
   spi_xfer_done = false;
   xfer_desc.tx_length = size_tx_buf[1];
   xfer_desc.rx_length = size_rx_buf[1];

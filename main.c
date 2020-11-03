@@ -70,6 +70,10 @@ NRF_BLE_GATT_DEF(m_gatt);                                                       
 NRF_BLE_QWR_DEF(m_qwr);                                                         /**< Context for the Queued Write module.*/
 BLE_ADVERTISING_DEF(m_advertising);                                             /**< Advertising module instance. */
 
+// Timer for rileylink service timer tick (1m)
+#define RILEYLINK_SERVICE_TIMER_TICKS APP_TIMER_TICKS(60000)
+APP_TIMER_DEF(m_timer_rileylink_service);
+
 /**< Structure used to identify the RileyLink service. */
 BLE_RILEYLINK_SERVICE_DEF(m_rileylink_service);
 
@@ -127,6 +131,11 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
     }
 }
 
+void rileylink_service_timer_timeout_handler(void *p_context) {
+    NRF_LOG_INFO("Timer fired");
+    ble_rileylink_service_timer_tick(&m_rileylink_service);
+}
+
 
 /**@brief Function for the Timer initialization.
  *
@@ -139,14 +148,8 @@ static void timers_init(void)
     APP_ERROR_CHECK(err_code);
 
     // Create timers.
-
-    /* YOUR_JOB: Create any timers to be used by the application.
-                 Below is an example of how to create a timer.
-                 For every new timer needed, increase the value of the macro APP_TIMER_MAX_TIMERS by
-                 one.
-       ret_code_t err_code;
-       err_code = app_timer_create(&m_app_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
-       APP_ERROR_CHECK(err_code); */
+    err_code = app_timer_create(&m_timer_rileylink_service, APP_TIMER_MODE_REPEATED, rileylink_service_timer_timeout_handler);
+    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -204,33 +207,6 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
 {
     APP_ERROR_HANDLER(nrf_error);
 }
-
-
-/**@brief Function for handling the YYY Service events.
- * YOUR_JOB implement a service handler function depending on the event the service you are using can generate
- *
- * @details This function will be called for all YY Service events which are passed to
- *          the application.
- *
- * @param[in]   p_yy_service   YY Service structure.
- * @param[in]   p_evt          Event received from the YY Service.
- *
- *
-static void on_yys_evt(ble_yy_service_t     * p_yy_service,
-                       ble_yy_service_evt_t * p_evt)
-{
-    switch (p_evt->evt_type)
-    {
-        case BLE_YY_NAME_EVT_WRITE:
-            APPL_LOG("[APPL]: charact written with value %s. ", p_evt->params.char_xx.value.p_str);
-            break;
-
-        default:
-            // No implementation needed.
-            break;
-    }
-}
-*/
 
 /**@brief Function for initializing services that will be used by the application.
  */
@@ -313,11 +289,9 @@ static void conn_params_init(void)
  */
 static void application_timers_start(void)
 {
-    /* YOUR_JOB: Start your timers. below is an example of how to start a timer.
-       ret_code_t err_code;
-       err_code = app_timer_start(m_app_timer_id, TIMER_INTERVAL, NULL);
-       APP_ERROR_CHECK(err_code); */
-
+  ret_code_t err_code;
+  err_code = app_timer_start(m_timer_rileylink_service, RILEYLINK_SERVICE_TIMER_TICKS, NULL);
+  APP_ERROR_CHECK(err_code);
 }
 
 
