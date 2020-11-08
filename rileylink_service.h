@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "nrf_sdh_ble.h"
 
+#define DEFAULT_DEVICE_NAME  "RileyLink2" 
 
 #define BLE_RILEYLINK_SERVICE_BLE_OBSERVER_PRIO 2
 

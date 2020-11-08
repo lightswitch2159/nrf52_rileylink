@@ -33,9 +33,8 @@
 #include "subg_rfspy_spi.h"
 #include "data_relay.h"
 #include "led_mode_handlers.h"
+#include "rileylink_config.h"
 
-
-#define DEVICE_NAME                     "RileyLink2"                             /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME               "Pete Schwamb"                          /**< Manufacturer. Will be passed to Device Information Service. */
 
 #define APP_ADV_INTERVAL                300                                     /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
@@ -164,9 +163,20 @@ static void gap_params_init(void)
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
-    err_code = sd_ble_gap_device_name_set(&sec_mode,
-                                          (const uint8_t *)DEVICE_NAME,
-                                          strlen(DEVICE_NAME));
+    if (rileylink_config.custom_name_len > 0)
+    {
+        NRF_LOG_INFO("gap_params_init with custom name");
+        err_code = sd_ble_gap_device_name_set(&sec_mode,
+                                          rileylink_config.custom_name,
+                                          rileylink_config.custom_name_len);
+    }
+    else
+    {
+        NRF_LOG_INFO("gap_params_init with default name");
+        err_code = sd_ble_gap_device_name_set(&sec_mode,
+                                              (const uint8_t *)DEFAULT_DEVICE_NAME,
+                                              strlen(DEFAULT_DEVICE_NAME));
+    }
     APP_ERROR_CHECK(err_code);
 
     /* YOUR_JOB: Use an appearance value matching the application's use case.
@@ -607,6 +617,8 @@ static void idle_state_handle(void)
  */
 static void advertising_start(bool erase_bonds)
 {
+    NRF_LOG_INFO("advertising_start()");
+
     if (erase_bonds == true)
     {
         delete_bonds();
@@ -642,17 +654,25 @@ static void gpio_init(void)
     nrf_drv_gpiote_in_event_enable(SUBG_RFSPY_RECEIVE_INTERRUPT_PIN, true);
 }
 
+static void rileylink_config_ready(bool succeeded) {
+    if (succeeded && rileylink_config.custom_name_len > 0) {
+        NRF_LOG_INFO("rileylink_config_ready");
+    } else {
+        NRF_LOG_ERROR("Config invalid; not starting.");
+        app_error_save_and_stop(0x1234, 0, 0);
+    }
+}
 
 /**@brief Function for application main entry.
  */
 int main(void)
-{
+  {
     bool erase_bonds;
 
     // Initialize.
     log_init();
     timers_init();
-    flash_storage_init();
+    rileylink_config_init(rileylink_config_ready);
     gpio_init();
     buttons_leds_init(&erase_bonds);
     power_management_init();

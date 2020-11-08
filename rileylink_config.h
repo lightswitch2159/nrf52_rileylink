@@ -18,5 +18,6 @@ extern rileylink_config_t rileylink_config;
 typedef void (*rileylink_config_ready_callback_t)(bool ok);
 
 void rileylink_config_init(rileylink_config_ready_callback_t ready_callback);
+void rileylink_config_save();
 
 #endif // RILEYLINK_CONFIG_H

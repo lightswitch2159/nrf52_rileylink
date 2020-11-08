@@ -44,8 +44,18 @@ static void on_disconnect(ble_rileylink_service_t * p_rileylink_service, ble_evt
 
 static void on_custom_name_update(ble_rileylink_service_t * p_rileylink_service, const uint8_t *name, uint16_t len)
 {
-    memcpy(rileylink_config.device_name, name, len);
-    rileylink_config.device_name
+    if (len > CUSTOM_RILEYLINK_NAME_MAX_LEN) {
+        len = CUSTOM_RILEYLINK_NAME_MAX_LEN;
+    }
+    NRF_LOG_DEBUG("Incoming name len: %d", len);
+    NRF_LOG_DEBUG("Incoming name ptr: 0x%x", name);
+    NRF_LOG_DEBUG("Config name ptr: 0x%x", rileylink_config.custom_name);
+    NRF_LOG_DEBUG("Incoming name str: %s", name);
+    NRF_LOG_DEBUG("Config name str: %s", rileylink_config.custom_name);
+    //memcpy(rileylink_config.custom_name, name, len);
+    NRF_LOG_DEBUG("Updated name str: %s", rileylink_config.custom_name);
+    rileylink_config.custom_name_len = len;
+    rileylink_config_save();
 }
 
 /**@brief Function for handling the Write event.
@@ -371,14 +381,15 @@ static uint32_t custom_name_char_add(ble_rileylink_service_t * p_rileylink_servi
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
 
     // Attribute Metadata settings
-    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
+    attr_md.vloc       = BLE_GATTS_VLOC_USER;
     attr_md.vlen       = 1;
 
     // Attribute Value settings
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
     attr_char_value.max_len      = CUSTOM_RILEYLINK_NAME_MAX_LEN;
-    attr_char_value.p_value      = NULL;
+    attr_char_value.p_value      = rileylink_config.custom_name;
+    attr_char_value.init_len     = rileylink_config.custom_name_len;
 
     err_code = sd_ble_gatts_characteristic_add(p_rileylink_service->service_handle, &char_md,
                                            &attr_char_value,
