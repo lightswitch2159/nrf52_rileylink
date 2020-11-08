@@ -47,13 +47,7 @@ static void on_custom_name_update(ble_rileylink_service_t * p_rileylink_service,
     if (len > CUSTOM_RILEYLINK_NAME_MAX_LEN) {
         len = CUSTOM_RILEYLINK_NAME_MAX_LEN;
     }
-    NRF_LOG_DEBUG("Incoming name len: %d", len);
-    NRF_LOG_DEBUG("Incoming name ptr: 0x%x", name);
-    NRF_LOG_DEBUG("Config name ptr: 0x%x", rileylink_config.custom_name);
-    NRF_LOG_DEBUG("Incoming name str: %s", name);
-    NRF_LOG_DEBUG("Config name str: %s", rileylink_config.custom_name);
-    //memcpy(rileylink_config.custom_name, name, len);
-    NRF_LOG_DEBUG("Updated name str: %s", rileylink_config.custom_name);
+    // Data is already in rileylink_config, because we are using BLE_GATTS_VLOC_USER.
     rileylink_config.custom_name_len = len;
     rileylink_config_save();
 }
