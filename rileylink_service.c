@@ -47,9 +47,13 @@ static void on_custom_name_update(ble_rileylink_service_t * p_rileylink_service,
     if (len > CUSTOM_RILEYLINK_NAME_MAX_LEN) {
         len = CUSTOM_RILEYLINK_NAME_MAX_LEN;
     }
-    // Data is already in rileylink_config, because we are using BLE_GATTS_VLOC_USER.
+    // Data is already in rileylink_config, because we are using BLE_GATTS_VLOC_USER and pointing to the memory in rileylink_config.
     rileylink_config.custom_name_len = len;
     rileylink_config_save();
+
+    if (p_rileylink_service->named_changed_callback != NULL) {
+        p_rileylink_service->named_changed_callback();
+    }
 }
 
 /**@brief Function for handling the Write event.
@@ -399,7 +403,7 @@ static uint32_t custom_name_char_add(ble_rileylink_service_t * p_rileylink_servi
 }
 
 
-uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_service, const ble_rileylink_service_init_t * p_rileylink_service_init)
+uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_service, const ble_rileylink_service_init_t * p_rileylink_service_init, ble_rileylink_service_name_changed_callback_t named_changed_callback)
 {
     uint32_t   err_code;
     ble_uuid_t ble_uuid;
@@ -410,6 +414,7 @@ uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_servic
     // Initialize service structure.
     p_rileylink_service->led_mode_write_handler = p_rileylink_service_init->led_mode_write_handler;
     p_rileylink_service->data_write_handler = p_rileylink_service_init->data_write_handler;
+    p_rileylink_service->named_changed_callback = named_changed_callback;
 
     // Add service UUID
     ble_uuid128_t base_uuid = {BLE_UUID_RILEYLINK_SERVICE_BASE_UUID};

@@ -89,6 +89,7 @@ static ble_uuid_t m_adv_uuids[] =                                               
 
 
 static void advertising_start(bool erase_bonds);
+static void name_changed();
 
 
 /**@brief Callback function for asserts in the SoftDevice.
@@ -233,7 +234,7 @@ static void services_init(void)
     // 1. Initialize the RileyLink service
     rileylink_init.led_mode_write_handler = led_mode_write_handler;
     rileylink_init.data_write_handler = data_relay_ble_write_handler;
-    err_code = ble_rileylink_service_init(&m_rileylink_service, &rileylink_init);
+    err_code = ble_rileylink_service_init(&m_rileylink_service, &rileylink_init, name_changed);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -654,11 +655,28 @@ static void gpio_init(void)
     nrf_drv_gpiote_in_event_enable(SUBG_RFSPY_RECEIVE_INTERRUPT_PIN, true);
 }
 
+static void name_changed() {
+    ret_code_t err_code;
+
+    // Re-init advertising params
+    gap_params_init();
+
+    err_code = sd_ble_gap_disconnect(m_conn_handle,
+                                     BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+    if (err_code != NRF_ERROR_INVALID_STATE)
+    {
+        APP_ERROR_CHECK(err_code);
+    }
+
+    //(void) sd_ble_gap_adv_stop(m_advertising.adv_handle);
+    //advertising_start(false);
+}
+
 static void rileylink_config_ready(bool succeeded) {
     if (succeeded && rileylink_config.custom_name_len > 0) {
         NRF_LOG_INFO("rileylink_config_ready");
     } else {
-        NRF_LOG_ERROR("Config invalid; not starting.");
+        NRF_LOG_ERROR("Config invalid.");
         app_error_save_and_stop(0x1234, 0, 0);
     }
 }

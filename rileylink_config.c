@@ -105,6 +105,11 @@ static ret_code_t read_rileylink_config()
 
     memcpy(&rileylink_config, record.p_data, sizeof(rileylink_config));
 
+    if(rileylink_config.custom_name_len == 0) {
+        strcpy(rileylink_config.custom_name, "RileyLink 2.0");
+        rileylink_config.custom_name_len = strlen(rileylink_config.custom_name);
+    }
+
     NRF_LOG_DEBUG("config read: name = %s", rileylink_config.custom_name);
 
     err_code = fds_record_close(&record_desc); 

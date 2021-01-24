@@ -61,6 +61,8 @@ typedef struct ble_rileylink_service_s ble_rileylink_service_t;
 
 typedef void (*ble_rileylink_service_led_mode_write_handler_t) (uint16_t conn_handle, ble_rileylink_service_t * p_rileylink_service, uint8_t new_state);
 typedef void (*ble_rileylink_service_data_write_handler_t) (const uint8_t *data, uint16_t length);
+typedef void (*ble_rileylink_service_name_changed_callback_t)();
+
 
 /** @brief LED Service init structure. This structure contains all options and data needed for
  *        initialization of the service.*/
@@ -89,6 +91,7 @@ typedef struct ble_rileylink_service_s
     ble_gatts_char_handles_t            custom_name_char_handles;
     ble_rileylink_service_led_mode_write_handler_t led_mode_write_handler;
     ble_rileylink_service_data_write_handler_t data_write_handler;
+    ble_rileylink_service_name_changed_callback_t named_changed_callback;
 
 } ble_rileylink_service_t;
 
@@ -102,7 +105,7 @@ typedef struct ble_rileylink_service_s
  *
  * @return      NRF_SUCCESS on successful initialization of service, otherwise an error code.
  */
-uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_service, const ble_rileylink_service_init_t * p_rileylink_service_init);
+uint32_t ble_rileylink_service_init(ble_rileylink_service_t * p_rileylink_service, const ble_rileylink_service_init_t * p_rileylink_service_init, ble_rileylink_service_name_changed_callback_t named_changed_callback);
 
 /**@brief Function for handling the application's BLE stack events.
  *

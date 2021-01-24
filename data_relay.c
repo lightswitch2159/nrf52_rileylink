@@ -24,6 +24,11 @@ void data_relay_spi_response_handler(const uint8_t *data, uint8_t length) {
     uint32_t   err_code;
 
     NRF_LOG_INFO("Data received via SPI: %d bytes.", length);
+    if (length > BLE_RILEYLINK_DATA_MAX_LENGTH) {
+        NRF_LOG_ERROR("Data received over SPI (%d) > than DATA attribute maximum length (%d). Truncating.", length, BLE_RILEYLINK_DATA_MAX_LENGTH);
+        length = BLE_RILEYLINK_DATA_MAX_LENGTH;
+    }
+
     err_code = ble_rileylink_service_send_data(m_rileylink_service, data, length);
     APP_ERROR_CHECK(err_code);
 }
