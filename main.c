@@ -683,7 +683,7 @@ static void rileylink_config_ready(bool succeeded) {
 /**@brief Function for application main entry.
  */
 int main(void)
-  {
+    {
     bool erase_bonds;
 
     // Initialize.

@@ -13,7 +13,7 @@
 #define NRFX_SPIM_MOSI_PIN 28
 #define NRFX_SPIM_MISO_PIN 29
 #define NRFX_SPIM_SS_PIN   3
-//#define NRFX_SPIM_DCX_PIN  30
+#define CC1110_RESET_PIN   31
 
 #define SPI_INSTANCE 0                                            /**< SPI instance index. */
 static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(SPI_INSTANCE);  /**< SPI instance. */
@@ -132,6 +132,13 @@ void subg_rfspy_spi_init(subg_rfspy_spi_response_handler_t response_handler) {
     // Using SS manually
     nrf_gpio_pin_set(NRFX_SPIM_SS_PIN);
     nrf_gpio_cfg_output(NRFX_SPIM_SS_PIN);
+
+    // Control CC1110 reset
+    nrf_gpio_pin_clear(CC1110_RESET_PIN);
+    nrf_gpio_cfg_output(CC1110_RESET_PIN);
+    nrf_delay_ms(3);
+    nrf_gpio_pin_set(CC1110_RESET_PIN);
+
 
     // Start execution.
     NRF_LOG_INFO("RileyLink 2.0 spi started.");
